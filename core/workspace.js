@@ -97,6 +97,8 @@ Blockly.Workspace.prototype.trashcan = null;
  */
 Blockly.Workspace.prototype.fireChangeEventPid_ = null;
 
+Blockly.Workspace.prototype.fireDeleteEventPid_ = null;
+
 /**
  * This workspace's scrollbars, if they exist.
  * @type {Blockly.ScrollbarPair}
@@ -183,7 +185,7 @@ Blockly.Workspace.prototype.addTopBlock = function(block) {
  * Remove a block from the list of top blocks.
  * @param {!Blockly.Block} block Block to remove.
  */
-Blockly.Workspace.prototype.removeTopBlock = function(block) {
+Blockly.Workspace.prototype.removeTopBlock = function(block, isDelete) {
   var found = false;
   for (var child, x = 0; child = this.topBlocks_[x]; x++) {
     if (child == block) {
@@ -198,7 +200,7 @@ Blockly.Workspace.prototype.removeTopBlock = function(block) {
   if (Blockly.Realtime.isEnabled() && this == Blockly.mainWorkspace) {
     Blockly.Realtime.removeTopBlock(block);
   }
-  this.fireChangeEvent();
+  this.fireChangeEvent(isDelete ? 'delete' : undefined);
 };
 
 /**
@@ -331,7 +333,7 @@ Blockly.Workspace.prototype.highlightBlock = function(id) {
  * Applications may hook workspace changes by listening for
  * 'blocklyWorkspaceChange' on Blockly.mainWorkspace.getCanvas().
  */
-Blockly.Workspace.prototype.fireChangeEvent = function() {
+Blockly.Workspace.prototype.fireChangeEvent = function(subtype) {
   if (this.fireChangeEventPid_) {
     window.clearTimeout(this.fireChangeEventPid_);
   }
@@ -340,6 +342,17 @@ Blockly.Workspace.prototype.fireChangeEvent = function() {
     this.fireChangeEventPid_ = window.setTimeout(function() {
         Blockly.fireUiEvent(canvas, 'blocklyWorkspaceChange');
       }, 0);
+  }
+
+  if (subtype === 'delete') {
+    if (this.fireDeleteEventPid_) {
+        window.clearTimeout(this.fireDeleteEventPid_);
+    }
+    if (canvas) {
+        this.fireDeleteEventPid_ = window.setTimeout(function() {
+            Blockly.fireUiEvent(canvas, 'blocklyBlockDeleted');
+        }, 0);
+    }
   }
 };
 

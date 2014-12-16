@@ -28,6 +28,7 @@ goog.provide('Blockly.Blocks.loops');
 
 goog.require('Blockly.Blocks');
 
+Blockly.Blocks.loops.COLOR = '#ff0000';
 
 Blockly.Blocks['controls_repeat'] = {
   /**
@@ -36,7 +37,7 @@ Blockly.Blocks['controls_repeat'] = {
    */
   init: function() {
     this.setHelpUrl(Blockly.Msg.CONTROLS_REPEAT_HELPURL);
-    this.setColour(120);
+    this.setFullColor(Blockly.Blocks.loops.COLOR);
     this.appendDummyInput()
         .appendField(Blockly.Msg.CONTROLS_REPEAT_TITLE_REPEAT)
         .appendField(new Blockly.FieldTextInput('10',
@@ -47,6 +48,9 @@ Blockly.Blocks['controls_repeat'] = {
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setTooltip(Blockly.Msg.CONTROLS_REPEAT_TOOLTIP);
+
+    // make inner repeat connections immune to freezing
+    this.inputList[1].connection.neverFrozen = true;
   }
 };
 

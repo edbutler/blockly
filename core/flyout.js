@@ -92,7 +92,15 @@ Blockly.Flyout.prototype.autoClose = true;
  * @type {number}
  * @const
  */
-Blockly.Flyout.prototype.CORNER_RADIUS = 8;
+Blockly.Flyout.prototype.CORNER_RADIUS = 0;
+
+
+/**
+ * Margin for blocks in the flyout.
+ * @type {number}
+ * @const
+ */
+ Blockly.Flyout.prototype.BLOCK_MARGIN = 5;
 
 
 /**
@@ -342,7 +350,8 @@ Blockly.Flyout.prototype.show = function(xmlList) {
   }
   this.buttons_.length = 0;
 
-  var margin = this.CORNER_RADIUS;
+  var margin = this.BLOCK_MARGIN;
+
   this.svgGroup_.style.display = 'block';
 
   // Create the blocks to be shown in this flyout.
@@ -605,15 +614,19 @@ Blockly.Flyout.prototype.createBlockFunc_ = function(originBlock) {
       // Beyond capacity.
       return;
     }
-    // Create the new block by cloning the block in the flyout (via XML).
-    var xml = Blockly.Xml.blockToDom_(originBlock);
-    var block = Blockly.Xml.domToBlock(flyout.targetWorkspace_, xml);
     // Place it in the same spot as the flyout copy.
+    // Do this FIRST because the toolbox might get updated in domToBlock
     var svgRootOld = originBlock.getSvgRoot();
     if (!svgRootOld) {
       throw 'originBlock is not rendered.';
     }
     var xyOld = Blockly.getSvgXY_(svgRootOld);
+
+    // Create the new block by cloning the block in the flyout (via XML).
+    var xml = Blockly.Xml.blockToDom_(originBlock);
+    var block = Blockly.Xml.domToBlock(flyout.targetWorkspace_, xml);
+    block.id = Blockly.genUid();
+
     var svgRootNew = block.getSvgRoot();
     if (!svgRootNew) {
       throw 'block is not rendered.';

@@ -95,6 +95,7 @@ Blockly.parseOptions_ = function(options) {
     var hasCollapse = false;
     var hasComments = false;
     var hasDisable = false;
+    var hasHelp = false;
     var tree = null;
   } else {
     var tree = Blockly.parseToolboxTree_(options['toolbox']);
@@ -116,6 +117,7 @@ Blockly.parseOptions_ = function(options) {
     if (hasDisable === undefined) {
       hasDisable = hasCategories;
     }
+    var hasHelp = options['help'];
   }
   if (tree && !hasCategories) {
     // Scrollbars are not compatible with a non-flyout toolbox.
@@ -137,6 +139,7 @@ Blockly.parseOptions_ = function(options) {
   Blockly.collapse = hasCollapse;
   Blockly.comments = hasComments;
   Blockly.disable = hasDisable;
+  Blockly.help = hasHelp;
   Blockly.readOnly = readOnly;
   Blockly.maxBlocks = options['maxBlocks'] || Infinity;
   Blockly.pathToBlockly = options['path'] || './';
@@ -298,29 +301,22 @@ Blockly.createDom_ = function(container) {
             for (var b = 0, block; block = blocks[b]; b++) {
               var blockXY = block.getRelativeToSurfaceXY();
               var blockHW = block.getHeightWidth();
+
               // Bump any block that's above the top back inside.
-              var overflow = metrics.viewTop + MARGIN - blockHW.height -
-                  blockXY.y;
-              if (overflow > 0) {
-                block.moveBy(0, overflow);
+              if (blockXY.y < metrics.viewTop) {
+                block.moveBy(0, metrics.viewTop - blockXY.y);
               }
               // Bump any block that's below the bottom back inside.
-              var overflow = metrics.viewTop + metrics.viewHeight - MARGIN -
-                  blockXY.y;
-              if (overflow < 0) {
-                block.moveBy(0, overflow);
+              if (blockXY.y + blockHW.height > metrics.viewTop + metrics.viewHeight) {
+                block.moveBy(0, metrics.viewTop + metrics.viewHeight - (blockXY.y + blockHW.height) - 25); // correct for underestimating of block height
               }
               // Bump any block that's off the left back inside.
-              var overflow = MARGIN + metrics.viewLeft - blockXY.x -
-                  (Blockly.RTL ? 0 : blockHW.width);
-              if (overflow > 0) {
-                block.moveBy(overflow, 0);
+              if (blockXY.x - (Blockly.RTL ? blockHW.width : 0) < metrics.viewLeft) {
+                block.moveBy(metrics.viewLeft - (blockXY.x - (Blockly.RTL ? blockHW.width : 0)), 0);
               }
               // Bump any block that's off the right back inside.
-              var overflow = metrics.viewLeft + metrics.viewWidth - MARGIN -
-                  blockXY.x + (Blockly.RTL ? blockHW.width : 0);
-              if (overflow < 0) {
-                block.moveBy(overflow, 0);
+              if (blockXY.x + (Blockly.RTL ? 0 : blockHW.width) > metrics.viewLeft + metrics.viewWidth) {
+                block.moveBy(metrics.viewLeft + metrics.viewWidth - (blockXY.x + (Blockly.RTL ? 0 : blockHW.width)), 0);
               }
               // Delete any block that's sitting on top of the flyout.
               if (block.isDeletable() && (Blockly.RTL ?
@@ -461,5 +457,6 @@ Blockly.updateToolbox = function(tree) {
     }
     Blockly.languageTree = tree;
     Blockly.mainWorkspace.flyout_.show(Blockly.languageTree.childNodes);
+    Blockly.fireUiEvent(Blockly.mainWorkspace.flyout_.svgGroup_, "toolboxUpdated");
   }
 };

@@ -198,7 +198,7 @@ Blockly.DRAG_RADIUS = 5;
 /**
  * Maximum misalignment between connections for them to snap together.
  */
-Blockly.SNAP_RADIUS = 20;
+Blockly.SNAP_RADIUS = 50;
 
 /**
  * Delay in ms between trigger and bumping unconnected block out of alignment.
@@ -745,6 +745,18 @@ Blockly.doCommand = function(cmdThunk) {
   } else {
     cmdThunk();
   }
+};
+
+/**
+ * Generic version of addChangeListener, but for any event on the canvas.
+ * @param {!String} event The event type.
+ * @param {!Function} func Function to call.
+ * @return {!Array.<!Array>} Opaque data that can be passed to
+ *     removeChangeListener.
+ */
+Blockly.addCanvasListener = function(type, func) {
+  var canvas = Blockly.mainWorkspace.getCanvas();
+  return Blockly.bindEvent_(canvas, type, null, func);
 };
 
 /**

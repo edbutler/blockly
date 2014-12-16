@@ -158,7 +158,8 @@ Blockly.Procedures.rename = function(text) {
       func.call(blocks[x], this.text_, text);
     }
   }
-  return text;
+  // cap at 25 characters
+  return text.substr(0, 25);
 };
 
 /**

@@ -199,7 +199,7 @@ Blockly.FieldTextInput.prototype.validate_ = function() {
 Blockly.FieldTextInput.prototype.resizeEditor_ = function() {
   var div = Blockly.WidgetDiv.DIV;
   var bBox = this.fieldGroup_.getBBox();
-  div.style.width = bBox.width + 'px';
+  div.style.width = bBox.width + 'px'; // 5px of padding in blocklyHtmlInput class
   var xy = Blockly.getAbsoluteXY_(/** @type {!Element} */ (this.borderRect_));
   // In RTL mode block fields and LTR input fields the left edge moves,
   // whereas the right edge is fixed.  Reposition the editor.
@@ -211,7 +211,7 @@ Blockly.FieldTextInput.prototype.resizeEditor_ = function() {
   // Shift by a few pixels to line up exactly.
   xy.y += 1;
   if (goog.userAgent.WEBKIT) {
-    xy.y -= 3;
+    xy.y -= 6;
   }
   div.style.left = xy.x + 'px';
   div.style.top = xy.y + 'px';

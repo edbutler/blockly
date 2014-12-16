@@ -506,6 +506,12 @@ Blockly.Connection.prototype.closest = function(maxLimit, dx, dy) {
  * @private
  */
 Blockly.Connection.prototype.checkType_ = function(otherConnection) {
+  if ((this.sourceBlock_.frozen || otherConnection.sourceBlock_.frozen) && !this.neverFrozen && !otherConnection.neverFrozen) {
+    return false;
+  }
+  if (otherConnection.sourceBlock_.frozen && otherConnection.targetConnection && otherConnection.targetConnection.sourceBlock_.frozen) {
+    return false;
+  }
   if (!this.check_ || !otherConnection.check_) {
     // One or both sides are promiscuous enough that anything will fit.
     return true;
@@ -685,7 +691,6 @@ Blockly.Connection.prototype.unhideAll = function() {
   return renderList;
 };
 
-
 /**
  * Database of connections.
  * Connections are stored in order of their vertical component.  This way
@@ -787,3 +792,4 @@ Blockly.ConnectionDB.init = function(workspace) {
   dbList[Blockly.PREVIOUS_STATEMENT] = new Blockly.ConnectionDB();
   workspace.connectionDBList = dbList;
 };
+

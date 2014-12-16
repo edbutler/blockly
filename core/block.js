@@ -40,8 +40,8 @@ goog.require('Blockly.Xml');
 goog.require('goog.Timer');
 goog.require('goog.array');
 goog.require('goog.asserts');
+goog.require('goog.color');
 goog.require('goog.string');
-
 
 /**
  * Unique ID counter for created blocks.
@@ -117,6 +117,7 @@ Blockly.Block.prototype.initialize = function(workspace, prototypeName) {
   this.id = Blockly.genUid();
   workspace.addTopBlock(this);
   this.fill(workspace, prototypeName);
+
   // Bind an onchange function, if it exists.
   if (goog.isFunction(this.onchange)) {
     Blockly.bindEvent_(workspace.getCanvas(), 'blocklyWorkspaceChange', this,
@@ -348,7 +349,7 @@ Blockly.Block.prototype.dispose = function(healStack, animate,
   // This block is now at the top of the workspace.
   // Remove this block from the workspace's list of top-most blocks.
   if (this.workspace && !opt_dontRemoveFromWorkspace) {
-    this.workspace.removeTopBlock(this);
+    this.workspace.removeTopBlock(this, true);
     this.workspace = null;
   }
 
@@ -463,7 +464,7 @@ Blockly.Block.prototype.getRelativeToSurfaceXY = function() {
 };
 
 /**
- * Move a block by a relative offset.
+ * Move a block by a relative offset. Only works for top blocks.
  * @param {number} dx Horizontal offset.
  * @param {number} dy Vertical offset.
  */
@@ -474,6 +475,18 @@ Blockly.Block.prototype.moveBy = function(dx, dy) {
   this.moveConnections_(dx, dy);
   Blockly.Realtime.blockChanged(this);
 };
+
+/**
+ * Shift a block by an offset relative to it's current postion.
+ * @param {number} dx Horizontal offset.
+ * @param {number} dy Vertical offset.
+ */
+Blockly.Block.prototype.shiftBy = function(dx, dy) {
+  var root = this.svg_.getRootElement();
+  var xy = Blockly.getRelativeXY_(root);
+  this.svg_.getRootElement().setAttribute('transform',
+      'translate(' + (xy.x + dx) + ', ' + (xy.y + dy) + ')');
+}
 
 /**
  * Returns a bounding box describing the dimensions of this block
@@ -559,6 +572,27 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
   Blockly.doCommand(function() {
     Blockly.terminateDrag_();
     if (Blockly.selected && Blockly.highlightedConnection_) {
+
+      // get the block the highlighted connection is currently connected to
+      // Blockly highlights the next connections, so this gives us the block we need to displace
+      var target = Blockly.highlightedConnection_.targetBlock();
+
+      // clean up any displacement
+      if (target && target.previousConnection) {
+        target.shiftBy(0, -this_.getHeightWidth().height);
+      }
+      var blocksToRevert = [];
+      var current = target ? target : Blockly.highlightedConnection_.sourceBlock_;
+      blocksToRevert.push(current);
+      while(current.getSurroundParent()) {
+        blocksToRevert.push(current.getSurroundParent());
+        current = current.getSurroundParent();
+      }
+      blocksToRevert.forEach(function (b) {
+        b.svg_.revertContainer();
+      });
+      $('.placeholder').remove();
+
       // Connect two blocks together.
       Blockly.localConnection_.connect(Blockly.highlightedConnection_);
       if (this_.svg_) {
@@ -740,13 +774,15 @@ Blockly.Block.prototype.showContextMenu_ = function(e) {
   }
 
   // Option to get help.
-  var url = goog.isFunction(this.helpUrl) ? this.helpUrl() : this.helpUrl;
-  var helpOption = {enabled: !!url};
-  helpOption.text = Blockly.Msg.HELP;
-  helpOption.callback = function() {
-    block.showHelp_();
-  };
-  options.push(helpOption);
+  if (Blockly.help) {
+    var url = goog.isFunction(this.helpUrl) ? this.helpUrl() : this.helpUrl;
+    var helpOption = {enabled: !!url};
+    helpOption.text = Blockly.Msg.HELP;
+    helpOption.callback = function() {
+        block.showHelp_();
+    };
+    options.push(helpOption);
+  }
 
   // Allow the block to add or modify options.
   if (this.customContextMenu && !block.isInFlyout) {
@@ -896,17 +932,145 @@ Blockly.Block.prototype.onMouseMove_ = function(e) {
       // Remove connection highlighting if needed.
       if (Blockly.highlightedConnection_ &&
           Blockly.highlightedConnection_ != closestConnection) {
+
+        // get the block the highlighted connection originates from
+        var source = Blockly.highlightedConnection_.sourceBlock_;
+
+        // block to start searching for containing blocks
+        var searchStartBlock;
+        // containing blocks (e.g. repeat) that need to be reverted
+        var blocksToRevert = [];
+
+        // un-expand using saved initial height (i.e. this_.svg_.renderBaseHeight)
+        if (this_.inputList && this_.inputList[1] && this_.inputList[1].type === Blockly.NEXT_STATEMENT) {
+          this_.svg_.renderSteps[this_.svg_.renderHeightIndex] = this_.svg_.renderBaseHeight;
+          this_.svg_.svgPath_.setAttribute('d', this_.svg_.renderSteps.join(' '));
+        }
+
+        // clean up displacement
+        // Blockly highlights the next connections, so this gives us the block we need to displace
+        if (Blockly.highlightedConnection_.targetBlock()) {
+          var target = Blockly.highlightedConnection_.targetBlock();
+          target.shiftBy(0, -this_.getHeightWidth().height);
+          searchStartBlock = target;
+        } else {
+          searchStartBlock = source;
+        }
+        // nested statement connection
+        if (source.inputList && source.inputList[1] && Blockly.highlightedConnection_ === source.inputList[1].connection) {
+          // we should include the source in the containing blocks to revert
+          blocksToRevert.push(source);
+          searchStartBlock = source;
+        }
+        $('.placeholder').remove();
+
+        // find and revert containing blocks
+        if (searchStartBlock) {
+          var current = searchStartBlock;
+          while(current.getSurroundParent()) {
+            blocksToRevert.push(current.getSurroundParent());
+            current = current.getSurroundParent();
+          }
+          blocksToRevert.forEach(function (b) {
+            b.svg_.revertContainer();
+          });
+        }
         Blockly.highlightedConnection_.unhighlight();
         Blockly.highlightedConnection_ = null;
         Blockly.localConnection_ = null;
       }
+
       // Add connection highlighting if needed.
       if (closestConnection &&
           closestConnection != Blockly.highlightedConnection_) {
         closestConnection.highlight();
         Blockly.highlightedConnection_ = closestConnection;
         Blockly.localConnection_ = localConnection;
+
+        // expand around target stack if applicable
+        var expanding = false;
+        if (this_.inputList && this_.inputList[1] && this_.inputList[1].type === Blockly.NEXT_STATEMENT &&
+            localConnection === this_.inputList[1].connection) {
+          var h = closestConnection.sourceBlock_.getHeightWidth().height;
+          this_.svg_.renderSteps[this_.svg_.renderHeightIndex] = h;
+          this_.svg_.svgPath_.setAttribute('d', this_.svg_.renderSteps.join(' '));
+          expanding = true;
+        }
+
+        // get the block the highlighted connection originates from
+        var source = Blockly.highlightedConnection_.sourceBlock_;
+
+        // create outline of dragged block
+        var outline = $('.blocklySelected').clone();
+        outline.children().not('.blocklyPath').remove();
+        outline.attr('class', outline.attr('class') + " placeholder");
+
+        // block to start searching for containing blocks
+        var searchStartBlock;
+        // containing blocks (e.g. repeat) that need to be expanded
+        var blocksToExpand = [];
+
+        // if we are inserting into a stack, we displace the blocks below in all cases
+        if (Blockly.highlightedConnection_.targetBlock()) {
+          // Blockly highlights the next connections, so this gives us the block we need to displace
+          var target = Blockly.highlightedConnection_.targetBlock();
+          outline.attr('transform', "translate(0," + (-this_.getHeightWidth().height) + ")"); // position outline
+          target.shiftBy(0, this_.getHeightWidth().height); // shift existing blocks
+          $(target.svg_.getRootElement()).append(outline); // add outline to svg
+          searchStartBlock = target;
+        } else { // otherwise we case on the nature of the connection
+          if (expanding) {
+            var xy = this_.getRelativeToSurfaceXY();
+            // adjustment so the connection of dragged block lines up with highlighted connection
+            var sourceDx = source.previousConnection.x_ - source.getRelativeToSurfaceXY().x;
+            // connections aren't moved when block is dragged, so we add in the block position delta (dx,dy), computed above
+            outline.attr('transform', "translate(" + (-(this_.inputList[1].connection.x_ + dx) + xy.x + sourceDx) + "," + (-(this_.inputList[1].connection.y_ + dy) + xy.y) + ")"); // position outline
+            // no need to shift existing blocks
+            $(source.svg_.getRootElement()).append(outline); // add outline to svg
+            // no search for containing blocks needed
+          }
+          // next connection
+          if (Blockly.highlightedConnection_ === source.nextConnection) {
+            outline.attr('transform', "translate(0," + (source.getHeightWidth().height) + ")"); // position outline
+            // no need to shift existing blocks
+            $(source.svg_.getRootElement()).append(outline); // add outline to svg
+            searchStartBlock = source;
+          }
+          // previous connection
+          if (Blockly.highlightedConnection_ === source.previousConnection && !expanding) {
+            outline.attr('transform', "translate(0," + (-this_.getHeightWidth().height) + ")"); // position outline
+            // no need to shift existing blocks
+            $(source.svg_.getRootElement()).append(outline); // add outline to svg
+            // no search for containing blocks needed
+          }
+          // nested statement connection
+          if (source.inputList && source.inputList[1] && Blockly.highlightedConnection_ === source.inputList[1].connection) {
+            var xy = source.getRelativeToSurfaceXY();
+            // adjustment so the connection of dragged block lines up with highlighted connection
+            // connections aren't moved when block is dragged, so we add in the block position delta (dx), computed above
+            var thisDx = this_.previousConnection.x_ + dx - this_.getRelativeToSurfaceXY().x;
+            outline.attr('transform', "translate(" + ((source.inputList[1].connection.x_ - xy.x) - thisDx) + "," + (source.inputList[1].connection.y_ - xy.y) + ")"); // position outline
+            // no need to shift existing blocks
+            $(source.svg_.getRootElement()).append(outline); // add outline to svg
+            searchStartBlock = source;
+            // we should include the source in the containing blocks to expand
+            blocksToExpand.push(source);
+          }
+        }
+
+        // find and expand containing blocks
+        if (searchStartBlock) {
+          var current = searchStartBlock;
+          while(current.getSurroundParent()) {
+            blocksToExpand.push(current.getSurroundParent());
+            current = current.getSurroundParent();
+          }
+          blocksToExpand.forEach(function (b) {
+            b.svg_.resizeContainer(this_.getHeightWidth().height);
+          });
+        }
       }
+
       // Flip the trash can lid if needed.
       if (this_.workspace.trashcan && this_.isDeletable()) {
         this_.workspace.trashcan.onMouseMove(e);
@@ -1167,16 +1331,16 @@ Blockly.Block.prototype.setHelpUrl = function(url) {
  * Get the colour of a block.
  * @return {number} HSV hue value.
  */
-Blockly.Block.prototype.getColour = function() {
-  return this.colourHue_;
+Blockly.Block.prototype.getFullColor = function() {
+  return this.colorFull_;
 };
 
 /**
  * Change the colour of a block.
  * @param {number} colourHue HSV hue value.
  */
-Blockly.Block.prototype.setColour = function(colourHue) {
-  this.colourHue_ = colourHue;
+Blockly.Block.prototype.setFullColor = function(color) {
+  this.colorFull_ = color;
   if (this.svg_) {
     this.svg_.updateColour();
   }
@@ -1193,6 +1357,23 @@ Blockly.Block.prototype.setColour = function(colourHue) {
     }
     this.render();
   }
+};
+
+
+/**
+ * Get the colour of a block.
+ * @return {number} HSV hue value.
+ */
+Blockly.Block.prototype.getColour = function() {
+  return goog.color.hexToHsv(this.getFullColor())[0];
+};
+
+/**
+ * Change the colour of a block.
+ * @param {number} colourHue HSV hue value.
+ */
+Blockly.Block.prototype.setColour = function(colourHue) {
+  this.setFullColor(Blockly.makeColour(colourHue));
 };
 
 /**
@@ -1866,3 +2047,71 @@ Blockly.Block.prototype.render = function() {
   this.svg_.render();
   Blockly.Realtime.blockChanged(this);
 };
+
+/**
+ * Makes a block unmoveable, undeletetable, and disables its context menu
+ * May make any fields on the block uneditable
+ * IF YOU CALL THIS, YOU MUST SUBSEQUENTLY CALL <Block>.svg_.updateColour TO GET THE CORRECT COLORS
+ */
+Blockly.Block.prototype.freeze = function(options) {
+  this.frozen = true;
+
+  this.setMovable(false);
+  this.setDeletable(false);
+  this.contextMenu = false;
+  if (options.doFreezeArgs) {
+    this.setEditable(false);
+  } else {
+    this.setEditable(true);
+  }
+};
+
+/**
+ * Returns a list the block and its siblings (blocks attached below it).
+ * Each element of the list is an object of the form {block: <block>} or {block: <block>, children: <children>}
+ * if the block contains child blocks (e.g. procedure, repeat).
+ */
+Blockly.Block.prototype.getStructure = function() {
+  var acc = [];
+  var block = this;
+
+  do {
+    var il = block.inputList;
+    // baldly assume children are in inputList[1]
+    if (il.length > 1 && il[1] && il[1].connection) {
+      var children = il[1].connection.targetBlock() ? il[1].connection.targetBlock().getStructure() : [];
+      acc.push({block: block, children: children});
+    } else {
+      acc.push({block: block});
+    }
+
+    if (block.nextConnection) {
+      block = block.nextConnection.targetBlock();
+    } else {
+      block = null;
+    }
+  } while (block);
+
+  return acc;
+};
+
+Blockly.Block.prototype.forEach = function(fn) {
+  var block = this;
+
+  do {
+    fn(block);
+
+    var il = block.inputList;
+    // baldly assume children are in inputList[1]
+    if (il.length > 1 && il[1] && il[1].connection && il[1].connection.targetBlock()) {
+      il[1].connection.targetBlock().forEach(fn);
+    }
+
+    if (block.nextConnection) {
+      block = block.nextConnection.targetBlock();
+    } else {
+      block = null;
+    }
+  } while (block);
+};
+

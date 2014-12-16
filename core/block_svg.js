@@ -60,6 +60,35 @@ Blockly.BlockSvg.prototype.height = 0;
 Blockly.BlockSvg.prototype.width = 0;
 
 /**
+ * The array of svg path steps from the most recent render.
+ * This array gets joined with a ' ' and the d attribute of the svgPath_ is set to the result.
+ */
+Blockly.BlockSvg.prototype.renderSteps = [];
+/**
+ * The index of the block height value in the renderSteps array.
+ * Only set when the input is of type Blockly.NEXT_STATEMENT (i.e. the start of a nested block).
+ * Used in Blockly.Block.prototype.onMouseMove_ to resize block height to fit potential contents.
+ */
+Blockly.BlockSvg.prototype.renderHeightIndex = 0;
+/**
+ * The block height value from the most recent render.
+ * Only set when the input is of type Blockly.NEXT_STATEMENT (i.e. the start of a nested block).
+ * Used in Blockly.Block.prototype.onMouseMove_ to resize block height back to previous value.
+ */
+Blockly.BlockSvg.prototype.renderBaseHeight = 0;
+
+/**
+ * The array of svg path steps from the most recent render for the light path.
+ * This array gets joined with a ' ' and the d attribute of the svgPath_ is set to the result.
+ */
+Blockly.BlockSvg.prototype.renderStepsLight = [];
+/**
+ * A list of objects containing the step index, the prefix for the svgPath step and the original height
+ * Used by resizeContainer and revertContainer to resize light path to fit potential contents.
+ */
+Blockly.BlockSvg.prototype.heightInfoListLight = [];
+
+/**
  * Constant for identifying rows that are to be rendered inline.
  * Don't collide with Blockly.INPUT_VALUE and friends.
  * @const
@@ -413,7 +442,22 @@ Blockly.BlockSvg.prototype.updateColour = function() {
     // Disabled blocks don't have colour.
     return;
   }
-  var hexColour = Blockly.makeColour(this.block_.getColour());
+  var hexColour = this.block_.getFullColor();
+  if (this.block_.frozen) {
+    // assumes the first field of the first inputList element will be the label of the block, so we check the second field
+    if (this.block_.editable_ && this.block_.inputList[0].fieldRow[1] instanceof Blockly.FieldTextInput) {
+      // assumes an alarming amount about structure of the svg:
+      // -- since blockly builds the svg as nested groups, the selection returns a list of all the text boxes
+      //    we assume the first element will be the closest text box (and therefore the one we want)
+      // -- we assume the first child of the text box group will be the rect whose style we actually need to change
+      var textBoxRect = this.svgGroup_.getElementsByClassName('blocklyEditableText')[0].firstChild;
+      textBoxRect.style.fill = goog.color.rgbArrayToHex(goog.color.lighten(goog.color.hexToRgb(hexColour), 0.3));
+      textBoxRect.style.fillOpacity = 1.0;
+    }
+    hexColour = goog.color.hsvToHex(0, 0, Blockly.HSV_VALUE * 256);
+  }
+
+
   var rgb = goog.color.hexToRgb(hexColour);
   var rgbLight = goog.color.lighten(rgb, 0.3);
   var rgbDark = goog.color.darken(rgb, 0.4);
@@ -447,6 +491,24 @@ Blockly.BlockSvg.prototype.updateDisabled = function() {
 Blockly.BlockSvg.prototype.addSelect = function() {
   Blockly.addClass_(/** @type {!Element} */ (this.svgGroup_),
                     'blocklySelected');
+  // Move the selected block to the top of the stack.
+  this.svgGroup_.parentNode.appendChild(this.svgGroup_);
+};
+
+Blockly.BlockSvg.prototype.addNewGlow = function() {
+  Blockly.addClass_(/** @type {!Element} */ (this.svgGroup_),
+                    'blocklyNew');
+  // Move the selected block to the top of the stack.
+  this.svgGroup_.parentNode.appendChild(this.svgGroup_);
+};
+
+Blockly.BlockSvg.prototype.addHighlight = function(isPrimary) {
+  Blockly.addClass_(/** @type {!Element} */ (this.svgGroup_),
+                    'blocklyHighlighted');
+  if (isPrimary) {
+    Blockly.addClass_(/** @type {!Element} */ (this.svgGroup_),
+                    'primaryHighlight');
+  }
   // Move the selected block to the top of the stack.
   this.svgGroup_.parentNode.appendChild(this.svgGroup_);
 };
@@ -725,6 +787,7 @@ Blockly.BlockSvg.prototype.renderDraw_ = function(iconWidth, inputRows) {
   // the edge of the block by a pixel. So undersize all measurements by a pixel.
   var highlightSteps = [];
   var highlightInlineSteps = [];
+  this.heightInfoListLight = [];
 
   this.renderDrawTop_(steps, highlightSteps, connectionsXY,
       inputRows.rightEdge);
@@ -732,6 +795,8 @@ Blockly.BlockSvg.prototype.renderDraw_ = function(iconWidth, inputRows) {
       highlightInlineSteps, connectionsXY, inputRows, iconWidth);
   this.renderDrawBottom_(steps, highlightSteps, connectionsXY, cursorY);
   this.renderDrawLeft_(steps, highlightSteps, connectionsXY, cursorY);
+  this.renderSteps = steps;
+  this.renderStepsLight = highlightSteps;
 
   var pathString = steps.join(' ') + '\n' + inlineSteps.join(' ');
   this.svgPath_.setAttribute('d', pathString);
@@ -997,7 +1062,9 @@ Blockly.BlockSvg.prototype.renderDrawRight_ = function(steps, highlightSteps,
       cursorX = inputRows.statementEdge + Blockly.BlockSvg.NOTCH_WIDTH;
       steps.push('H', cursorX);
       steps.push(Blockly.BlockSvg.INNER_TOP_LEFT_CORNER);
-      steps.push('v', row.height - 2 * Blockly.BlockSvg.CORNER_RADIUS);
+      this.renderBaseHeight = row.height - 2 * Blockly.BlockSvg.CORNER_RADIUS;
+      steps.push('v', this.renderBaseHeight); // height of the block
+      this.renderHeightIndex = steps.length - 1;
       steps.push(Blockly.BlockSvg.INNER_BOTTOM_LEFT_CORNER);
       steps.push('H', inputRows.rightEdge);
       if (Blockly.RTL) {
@@ -1017,6 +1084,11 @@ Blockly.BlockSvg.prototype.renderDrawRight_ = function(steps, highlightSteps,
             (cursorX - Blockly.BlockSvg.NOTCH_WIDTH +
              Blockly.BlockSvg.DISTANCE_45_OUTSIDE) + ',' +
             (cursorY + row.height - Blockly.BlockSvg.DISTANCE_45_OUTSIDE));
+
+        // store info about path along inside of bottom portion for resizing
+        this.heightInfoListLight.push({index:highlightSteps.length-1, prefix:(cursorX - Blockly.BlockSvg.NOTCH_WIDTH +
+             Blockly.BlockSvg.DISTANCE_45_OUTSIDE) + ',', original:cursorY + row.height - Blockly.BlockSvg.DISTANCE_45_OUTSIDE})
+
         highlightSteps.push(
             Blockly.BlockSvg.INNER_BOTTOM_LEFT_CORNER_HIGHLIGHT_LTR);
         highlightSteps.push('H', inputRows.rightEdge);
@@ -1087,6 +1159,8 @@ Blockly.BlockSvg.prototype.renderDrawBottom_ =
     steps.push('H 0');
     if (!Blockly.RTL) {
       highlightSteps.push('M', '1,' + cursorY);
+      // store info about light path on the outside left edge for resizing
+      this.heightInfoListLight.push({index:highlightSteps.length-1, prefix:'1,', original:cursorY});
     }
   } else {
     steps.push('H', Blockly.BlockSvg.CORNER_RADIUS);
@@ -1097,9 +1171,17 @@ Blockly.BlockSvg.prototype.renderDrawBottom_ =
     if (!Blockly.RTL) {
       highlightSteps.push('M', Blockly.BlockSvg.DISTANCE_45_INSIDE + ',' +
           (cursorY - Blockly.BlockSvg.DISTANCE_45_INSIDE));
+
+      // store info about light path on the outside left edge for resizing
+      this.heightInfoListLight.push({index:highlightSteps.length-1, prefix:Blockly.BlockSvg.DISTANCE_45_INSIDE + ',', original:cursorY - Blockly.BlockSvg.DISTANCE_45_INSIDE});
+
       highlightSteps.push('A', (Blockly.BlockSvg.CORNER_RADIUS - 1) + ',' +
           (Blockly.BlockSvg.CORNER_RADIUS - 1) + ' 0 0,1 ' +
           '1,' + (cursorY - Blockly.BlockSvg.CORNER_RADIUS));
+
+      // store info about light path on the outside left edge for resizing
+      this.heightInfoListLight.push({index:highlightSteps.length-1, prefix:(Blockly.BlockSvg.CORNER_RADIUS - 1) + ',' +
+          (Blockly.BlockSvg.CORNER_RADIUS - 1) + ' 0 0,1 ' + '1,', original:cursorY - Blockly.BlockSvg.CORNER_RADIUS});
     }
   }
 };
@@ -1143,3 +1225,48 @@ Blockly.BlockSvg.prototype.renderDrawLeft_ =
   }
   steps.push('z');
 };
+
+Blockly.BlockSvg.prototype.resizeContainer = function(dy) {
+  if (!this.renderHeightIndex) {
+    return;
+  }
+  // add class
+  var rootSvg = $(this.getRootElement());
+  rootSvg.attr('class', rootSvg.attr('class') + " tempExpanded");
+  // shift down successor blocks
+  if (this.block_.nextConnection && this.block_.nextConnection.targetBlock()) {
+    this.block_.nextConnection.targetBlock().shiftBy(0, dy);
+  }
+  // resize main path
+  this.renderSteps[this.renderHeightIndex] = dy + this.renderBaseHeight;
+  this.svgPath_.setAttribute('d', this.renderSteps.join(' '));
+  this.svgPathDark_.setAttribute('d', this.renderSteps.join(' '));
+  // resize light path
+  this.heightInfoListLight.forEach(function (info) {
+    this.renderStepsLight[info.index] = info.prefix + (info.original + dy);
+  }, this);
+  this.svgPathLight_.setAttribute('d', this.renderStepsLight.join(' '));
+}
+
+Blockly.BlockSvg.prototype.revertContainer = function() {
+  if (!this.renderBaseHeight) {
+    return;
+  }
+  // remove class
+  var rootSvg = $(this.getRootElement());
+  rootSvg.attr('class', rootSvg.attr('class').replace(" tempExpanded", ""));
+  // shift up successor blocks
+  if (this.block_.nextConnection && this.block_.nextConnection.targetBlock()) {
+    console.info(this.renderBaseHeight - this.renderSteps[this.renderHeightIndex]);
+    this.block_.nextConnection.targetBlock().shiftBy(0, this.renderBaseHeight - this.renderSteps[this.renderHeightIndex]);
+  }
+  // revert main path
+  this.renderSteps[this.renderHeightIndex] = this.renderBaseHeight;
+  this.svgPath_.setAttribute('d', this.renderSteps.join(' '));
+  this.svgPathDark_.setAttribute('d', this.renderSteps.join(' '));
+  // revert light path
+  this.heightInfoListLight.forEach(function (info) {
+    this.renderStepsLight[info.index] = info.prefix + info.original;
+  }, this);
+  this.svgPathLight_.setAttribute('d', this.renderStepsLight.join(' '));
+}
