@@ -2,7 +2,7 @@
  * Blockly Apps: Common code
  *
  * Copyright 2013 Google Inc.
- * https://blockly.googlecode.com/
+ * https://developers.google.com/blockly/
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -349,7 +349,7 @@ BlocklyApps.init = function() {
  */
 BlocklyApps.initReadonly = function() {
   Blockly.inject(document.getElementById('blockly'),
-      {path: '../../',
+      {media: '../../media/',
        readOnly: true,
        rtl: BlocklyApps.isRtl(),
        scrollbars: false});

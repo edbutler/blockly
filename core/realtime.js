@@ -3,7 +3,7 @@
  * Visual Blocks Editor
  *
  * Copyright 2014 Google Inc.
- * https://blockly.googlecode.com/
+ * https://developers.google.com/blockly/
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@
  * @fileoverview Common support code for Blockly apps using realtime
  * collaboration.
  * Note that to use this you must set up a project via the Google Developers
- * Console. Instructions on how to do that can be found in the Blockly wiki page
- * at https://code.google.com/p/blockly/wiki/RealtimeCollaboration
+ * Console. Instructions on how to do that can be found at
+ * https://developers.google.com/blockly/realtime-collaboration
  * Once you do that you can set the clientId in
  * Blockly.Realtime.rtclientOptions_
  * @author markf@google.com (Mark Friedman)
@@ -41,13 +41,6 @@ goog.require('goog.array');
 goog.require('goog.dom');
 goog.require('goog.style');
 goog.require('rtclient');
-
-/**
- * URL for progress indicator.
- * @type {string}
- * @private
- */
-Blockly.Realtime.PROGRESS_URL_ = 'media/progress.gif';
 
 /**
  * Is realtime collaboration enabled?
@@ -152,14 +145,14 @@ Blockly.Realtime.redoElementId_ = null;
  * @type {string}
  * @private
  */
-Blockly.Realtime.PROGRESS_URL_ = 'media/progress.gif';
+Blockly.Realtime.PROGRESS_URL_ = 'progress.gif';
 
 /**
  * URL of the anonymous user image.
  * @type {string}
  * @private
  */
-Blockly.Realtime.ANONYMOUS_URL_ = 'media/anon.jpeg';
+Blockly.Realtime.ANONYMOUS_URL_ = 'anon.jpeg';
 
 /**
  * This function is called the first time that the Realtime model is created
@@ -747,7 +740,7 @@ Blockly.Realtime.startRealtime = function(uiInitialize, uiContainer, options) {
  */
 Blockly.Realtime.addAuthUi_ = function(uiContainer) {
   // Add progess indicator to the UI container.
-  uiContainer.style.background = 'url(' + Blockly.pathToBlockly +
+  uiContainer.style.background = 'url(' + Blockly.pathToMedia +
       Blockly.Realtime.PROGRESS_URL_ + ') no-repeat center center';
   // Setup authorization button
   var blocklyDivBounds = goog.style.getBounds(uiContainer);
@@ -792,7 +785,7 @@ Blockly.Realtime.updateCollabUi_ = function() {
   for (var i = 0; i < collaboratorsList.length; i++) {
     var collaborator = collaboratorsList[i];
     var imgSrc = collaborator.photoUrl ||
-        Blockly.pathToBlockly + Blockly.Realtime.ANONYMOUS_URL_;
+        Blockly.pathToMedia + Blockly.Realtime.ANONYMOUS_URL_;
     var img = goog.dom.createDom('img',
         {
           'src': imgSrc,

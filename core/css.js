@@ -3,7 +3,7 @@
  * Visual Blocks Editor
  *
  * Copyright 2013 Google Inc.
- * https://blockly.googlecode.com/
+ * https://developers.google.com/blockly/
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ goog.require('goog.cssom');
 Blockly.Css.inject = function() {
   var text = Blockly.Css.CONTENT.join('\n');
   // Strip off any trailing slash (either Unix or Windows).
-  var path = Blockly.pathToBlockly.replace(/[\\\/]$/, '');
+  var path = Blockly.pathToMedia.replace(/[\\\/]$/, '');
   text = text.replace(/<<<PATH>>>/g, path);
   goog.cssom.addCssText(text);
 };
@@ -64,9 +64,9 @@ Blockly.Css.CONTENT = [
     /*
       Hotspot coordinates are baked into the CUR file, but they are still
       required in the CSS due to a Chrome bug.
-      http://code.google.com/p/chromium/issues/detail?id=1446
+      https://code.google.com/p/chromium/issues/detail?id=1446
     */
-  '  cursor: url(<<<PATH>>>/media/handopen.cur) 8 5, auto;',
+  '  cursor: url(<<<PATH>>>/handopen.cur) 8 5, auto;',
   '}',
 
   '.blocklyResizeSE {',
@@ -335,7 +335,7 @@ Blockly.Css.CONTENT = [
   /* Override the default Closure URL. */
   '.blocklyWidgetDiv .goog-option-selected .goog-menuitem-checkbox,',
   '.blocklyWidgetDiv .goog-option-selected .goog-menuitem-icon {',
-  '  background: url(<<<PATH>>>/media/sprites.png) no-repeat -48px -16px !important;',
+  '  background: url(<<<PATH>>>/sprites.png) no-repeat -48px -16px !important;',
   '}',
 
   /* Category tree in Toolbox. */
@@ -375,7 +375,7 @@ Blockly.Css.CONTENT = [
   '  height: 16px;',
   '  width: 16px;',
   '  vertical-align: middle;',
-  '  background-image: url(<<<PATH>>>/media/sprites.png);',
+  '  background-image: url(<<<PATH>>>/sprites.png);',
   '}',
 
   '.blocklyTreeIconClosedLtr {',

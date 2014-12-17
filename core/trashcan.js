@@ -3,7 +3,7 @@
  * Visual Blocks Editor
  *
  * Copyright 2011 Google Inc.
- * https://blockly.googlecode.com/
+ * https://developers.google.com/blockly/
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,7 +172,7 @@ Blockly.Trashcan.prototype.createDom = function() {
        'clip-path': 'url(#blocklyTrashBodyClipPath)'},
       this.svgGroup_);
   body.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href',
-      Blockly.pathToBlockly + Blockly.SPRITE.url);
+      Blockly.pathToMedia + Blockly.SPRITE.url);
 
   var clip = Blockly.createSvgElement('clipPath',
       {'id': 'blocklyTrashLidClipPath'},
@@ -184,7 +184,7 @@ Blockly.Trashcan.prototype.createDom = function() {
        'clip-path': 'url(#blocklyTrashLidClipPath)'},
       this.svgGroup_);
   this.svgLid_.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href',
-      Blockly.pathToBlockly + Blockly.SPRITE.url);
+      Blockly.pathToMedia + Blockly.SPRITE.url);
 
   return this.svgGroup_;
 };

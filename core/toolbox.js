@@ -3,7 +3,7 @@
  * Visual Blocks Editor
  *
  * Copyright 2011 Google Inc.
- * https://blockly.googlecode.com/
+ * https://developers.google.com/blockly/
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ Blockly.Toolbox.createDom = function(svg, container) {
  */
 Blockly.Toolbox.init = function() {
   Blockly.Toolbox.CONFIG_['cleardotPath'] =
-      Blockly.pathToBlockly + 'media/1x1.gif';
+      Blockly.pathToMedia + '1x1.gif';
   Blockly.Toolbox.CONFIG_['cssCollapsedFolderIcon'] =
       'blocklyTreeIconClosed' + (Blockly.RTL ? 'Rtl' : 'Ltr');
   var tree = new Blockly.Toolbox.TreeControl(goog.html.SafeHtml.EMPTY,
