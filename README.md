@@ -1,8 +1,6 @@
 # Blockly
 
-Google's Blockly is a web-based, visual programming editor.  Users can drag
-blocks together to build a programs.  All code is free and open source.
+A fork of Google's Blockly project for use in an ongoing research project.
+Includes several feature additions/changes, all of which happen on the *ruthefjord* branch.
 
-**The project page is https://developers.google.com/blockly/**
-
-![](https://developers.google.com/blockly/sample.png)
+The build file to use is <code>mybuild.py</code>. The original build script from master is preserved in this branch, but never used.
