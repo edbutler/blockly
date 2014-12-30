@@ -61,7 +61,7 @@ goog.require('goog.userAgent');
  * Path to Blockly's media directory.  Can be relative, absolute, or remote.
  * Used for loading sounds and sprites.  Defaults to demo server.
  */
-Blockly.pathToMedia = 'https://blockly-demo.appspot.com/static/media/';
+Blockly.pathToMedia = 'media/';
 
 /**
  * Required name space for SVG elements.
