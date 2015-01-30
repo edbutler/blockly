@@ -172,7 +172,8 @@ Blockly.Flyout.prototype.getMetrics_ = function() {
   return {
     viewHeight: viewHeight,
     viewWidth: viewWidth,
-    contentHeight: optionBox.height + optionBox.y,
+    // add on the height of the last block, which doesn't seem to be accounted for by the canvas bounding box
+    contentHeight: optionBox.height + optionBox.y + this.workspace_.getAllBlocks()[this.workspace_.getAllBlocks().length - 1].getHeightWidth().height,
     viewTop: -this.workspace_.scrollY,
     contentTop: 0,
     absoluteTop: this.CORNER_RADIUS,
