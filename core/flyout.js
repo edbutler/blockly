@@ -169,11 +169,15 @@ Blockly.Flyout.prototype.getMetrics_ = function() {
     // Firefox has trouble with hidden elements (Bug 528969).
     var optionBox = {height: 0, y: 0};
   }
+  var heightAdjust = 0;
+  if (this.workspace_.getAllBlocks().length > 0) {
+    heightAdjust = this.workspace_.getAllBlocks()[this.workspace_.getAllBlocks().length - 1].getHeightWidth().height;
+  }
   return {
     viewHeight: viewHeight,
     viewWidth: viewWidth,
     // add on the height of the last block, which doesn't seem to be accounted for by the canvas bounding box
-    contentHeight: optionBox.height + optionBox.y + this.workspace_.getAllBlocks()[this.workspace_.getAllBlocks().length - 1].getHeightWidth().height,
+    contentHeight: optionBox.height + optionBox.y + heightAdjust,
     viewTop: -this.workspace_.scrollY,
     contentTop: 0,
     absoluteTop: this.CORNER_RADIUS,
