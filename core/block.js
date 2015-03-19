@@ -30,6 +30,7 @@ goog.require('Blockly.BlockSvg');
 goog.require('Blockly.Blocks');
 goog.require('Blockly.Comment');
 goog.require('Blockly.Connection');
+goog.require('Blockly.ParamConnection');
 goog.require('Blockly.ContextMenu');
 goog.require('Blockly.Input');
 goog.require('Blockly.Msg');
@@ -662,6 +663,15 @@ Blockly.Block.prototype.duplicate_ = function() {
   xy.y += Blockly.SNAP_RADIUS * 2;
   newBlock.moveBy(xy.x, xy.y);
   newBlock.select();
+  return newBlock;
+};
+
+Blockly.Block.prototype.duplicateParam = function() {
+  // Create a duplicate via XML.
+  var xmlBlock = Blockly.Xml.blockToDom_(this);
+  Blockly.Xml.deleteNext(xmlBlock);
+  var newBlock = Blockly.Xml.domToBlock(
+      /** @type {!Blockly.Workspace} */ (this.workspace), xmlBlock);
   return newBlock;
 };
 
@@ -1530,7 +1540,7 @@ Blockly.Block.prototype.setOutput = function(newBoolean, opt_check) {
       opt_check = null;
     }
     this.outputConnection =
-        new Blockly.Connection(this, Blockly.OUTPUT_VALUE);
+        new Blockly.ParamConnection(this, Blockly.OUTPUT_VALUE);
     this.outputConnection.setCheck(opt_check);
   }
   if (this.rendered) {
@@ -1571,7 +1581,7 @@ Blockly.Block.prototype.setInputsInline = function(newBoolean) {
  * @param {boolean} disabled True if disabled.
  */
 Blockly.Block.prototype.setDisabled = function(disabled) {
-  if (this.disabled == disabled) {
+  if (this.disabled == disabled || this.locked) {
     return;
   }
   this.disabled = disabled;
