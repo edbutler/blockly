@@ -1581,7 +1581,7 @@ Blockly.Block.prototype.setInputsInline = function(newBoolean) {
  * @param {boolean} disabled True if disabled.
  */
 Blockly.Block.prototype.setDisabled = function(disabled) {
-  if (this.disabled == disabled || this.locked) {
+  if (this.disabled == disabled || (this.disabled && this.locked)) {
     return;
   }
   this.disabled = disabled;
