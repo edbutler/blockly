@@ -1258,7 +1258,6 @@ Blockly.BlockSvg.prototype.revertContainer = function() {
   rootSvg.attr('class', rootSvg.attr('class').replace(" tempExpanded", ""));
   // shift up successor blocks
   if (this.block_.nextConnection && this.block_.nextConnection.targetBlock()) {
-    console.info(this.renderBaseHeight - this.renderSteps[this.renderHeightIndex]);
     this.block_.nextConnection.targetBlock().shiftBy(0, this.renderBaseHeight - this.renderSteps[this.renderHeightIndex]);
   }
   // revert main path
