@@ -1540,7 +1540,7 @@ Blockly.Block.prototype.setOutput = function(newBoolean, opt_check) {
       opt_check = null;
     }
     this.outputConnection =
-        new Blockly.ParamConnection(this, Blockly.OUTPUT_VALUE);
+        new Blockly.Connection(this, Blockly.OUTPUT_VALUE);
     this.outputConnection.setCheck(opt_check);
   }
   if (this.rendered) {
