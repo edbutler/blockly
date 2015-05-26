@@ -454,6 +454,16 @@ Blockly.BlockSvg.prototype.updateColour = function() {
       textBoxRect.style.fill = goog.color.rgbArrayToHex(goog.color.lighten(goog.color.hexToRgb(hexColour), 0.3));
       textBoxRect.style.fillOpacity = 1.0;
     }
+    // if this is an inline input, we should check the first field
+    else if (this.block_.editable_ && this.block_.inputList[0].fieldRow[0] instanceof Blockly.FieldTextInput) {
+      // assumes an alarming amount about structure of the svg:
+      // -- since blockly builds the svg as nested groups, the selection returns a list of all the text boxes
+      //    we assume the first element will be the closest text box (and therefore the one we want)
+      // -- we assume the first child of the text box group will be the rect whose style we actually need to change
+      var textBoxRect = this.svgGroup_.getElementsByClassName('blocklyEditableText')[0].firstChild;
+      textBoxRect.style.fill = goog.color.rgbArrayToHex(goog.color.lighten(goog.color.hexToRgb(hexColour), 0.3));
+      textBoxRect.style.fillOpacity = 1.0;
+    }
     hexColour = goog.color.hsvToHex(0, 0, Blockly.HSV_VALUE * 256);
   }
 

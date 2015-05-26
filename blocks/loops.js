@@ -30,38 +30,38 @@ goog.require('Blockly.Blocks');
 
 Blockly.Blocks.loops.COLOR = '#ff0000';
 
+// Blockly.Blocks['controls_repeat'] = {
+//   /**
+//    * Block for repeat n times (internal number).
+//    * @this Blockly.Block
+//    */
+//   init: function() {
+//     this.setHelpUrl(Blockly.Msg.CONTROLS_REPEAT_HELPURL);
+//     this.setFullColor(Blockly.Blocks.loops.COLOR);
+//     this.appendDummyInput()
+//         .appendField(Blockly.Msg.CONTROLS_REPEAT_TITLE_REPEAT)
+//         .appendField(new Blockly.FieldTextInput('10',
+//             Blockly.FieldTextInput.nonnegativeIntegerValidator), 'TIMES')
+//         .appendField(Blockly.Msg.CONTROLS_REPEAT_TITLE_TIMES);
+//     this.appendStatementInput('DO')
+//         .appendField(Blockly.Msg.CONTROLS_REPEAT_INPUT_DO);
+//     this.setPreviousStatement(true);
+//     this.setNextStatement(true);
+//     this.setTooltip(Blockly.Msg.CONTROLS_REPEAT_TOOLTIP);
+
+//     // make inner repeat connections immune to freezing
+//     this.inputList[1].connection.neverFrozen = true;
+//   }
+// };
+
 Blockly.Blocks['controls_repeat'] = {
-  /**
-   * Block for repeat n times (internal number).
-   * @this Blockly.Block
-   */
-  init: function() {
-    this.setHelpUrl(Blockly.Msg.CONTROLS_REPEAT_HELPURL);
-    this.setFullColor(Blockly.Blocks.loops.COLOR);
-    this.appendDummyInput()
-        .appendField(Blockly.Msg.CONTROLS_REPEAT_TITLE_REPEAT)
-        .appendField(new Blockly.FieldTextInput('10',
-            Blockly.FieldTextInput.nonnegativeIntegerValidator), 'TIMES')
-        .appendField(Blockly.Msg.CONTROLS_REPEAT_TITLE_TIMES);
-    this.appendStatementInput('DO')
-        .appendField(Blockly.Msg.CONTROLS_REPEAT_INPUT_DO);
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.setTooltip(Blockly.Msg.CONTROLS_REPEAT_TOOLTIP);
-
-    // make inner repeat connections immune to freezing
-    this.inputList[1].connection.neverFrozen = true;
-  }
-};
-
-Blockly.Blocks['controls_repeat_ext'] = {
   /**
    * Block for repeat n times (external number).
    * @this Blockly.Block
    */
   init: function() {
     this.setHelpUrl(Blockly.Msg.CONTROLS_REPEAT_HELPURL);
-    this.setColour(120);
+    this.setFullColor(Blockly.Blocks.loops.COLOR);
     this.interpolateMsg(Blockly.Msg.CONTROLS_REPEAT_TITLE,
                         ['TIMES', 'Number', Blockly.ALIGN_RIGHT],
                         Blockly.ALIGN_RIGHT);
@@ -71,6 +71,9 @@ Blockly.Blocks['controls_repeat_ext'] = {
     this.setNextStatement(true);
     this.setInputsInline(true);
     this.setTooltip(Blockly.Msg.CONTROLS_REPEAT_TOOLTIP);
+
+    // make inner repeat connections immune to freezing
+    this.getNextStatementInput().connection.neverFrozen = true;
   }
 };
 

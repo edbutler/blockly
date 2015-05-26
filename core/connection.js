@@ -97,7 +97,7 @@ Blockly.Connection.prototype.connect = function(otherConnection) {
     } else if (otherConnection.targetConnection) {
       // If female block is already connected, disconnect and bump the male.
       var orphanBlock = otherConnection.targetBlock();
-      orphanBlock.setParent(null);
+      orphanBlock.setParent(null, true);
       if (!orphanBlock.outputConnection) {
         throw 'Orphan block does not have an output connection.';
       }
