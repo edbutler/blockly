@@ -28,24 +28,35 @@ goog.provide('Blockly.Flyout');
 
 goog.require('Blockly.Block');
 goog.require('Blockly.Comment');
-goog.require('goog.userAgent');
+goog.require('Blockly.WorkspaceSvg');
+goog.require('goog.dom');
+goog.require('goog.events');
 goog.require('goog.math.Rect');
+goog.require('goog.userAgent');
 
 
 /**
  * Class for a flyout.
+ * @param {!Object} workspaceOptions Dictionary of options for the workspace.
  * @constructor
  */
-Blockly.Flyout = function() {
+Blockly.Flyout = function(workspaceOptions) {
   var flyout = this;
+  workspaceOptions.getMetrics = function() {return flyout.getMetrics_();};
+  workspaceOptions.setMetrics =
+      function(ratio) {return flyout.setMetrics_(ratio);};
   /**
    * @type {!Blockly.Workspace}
    * @private
    */
-  this.workspace_ = new Blockly.Workspace(
-      function() {return flyout.getMetrics_();},
-      function(ratio) {return flyout.setMetrics_(ratio);});
+  this.workspace_ = new Blockly.WorkspaceSvg(workspaceOptions);
   this.workspace_.isFlyout = true;
+
+  /**
+   * Is RTL vs LTR.
+   * @type {boolean}
+   */
+  this.RTL = !!workspaceOptions.RTL;
 
   /**
    * Opaque data that can be passed to removeChangeListener.
@@ -120,6 +131,32 @@ Blockly.Flyout.prototype.createDom = function() {
       {'class': 'blocklyFlyoutBackground'}, this.svgGroup_);
   this.svgGroup_.appendChild(this.workspace_.createDom());
   return this.svgGroup_;
+};
+
+/**
+ * Initializes the flyout.
+ * @param {!Blockly.Workspace} workspace The workspace in which to create new
+ *     blocks.
+ */
+Blockly.Flyout.prototype.init = function(workspace) {
+  this.targetWorkspace_ = workspace;
+  this.workspace_.targetWorkspace = workspace;
+  // Add scrollbar.
+  this.scrollbar_ = new Blockly.Scrollbar(this.workspace_, false, false);
+
+  this.hide();
+
+  this.eventWrappers_.concat(Blockly.bindEvent_(this.svgGroup_,
+      'wheel', this, this.wheel_));
+  // Safari needs mousewheel.
+  this.eventWrappers_.concat(Blockly.bindEvent_(this.svgGroup_,
+      'mousewheel', this, this.wheel_));
+  this.eventWrappers_.concat(
+      Blockly.bindEvent_(this.targetWorkspace_.getCanvas(),
+      'blocklyWorkspaceChange', this, this.filterForCapacity_));
+  // Dragging the flyout up and down.
+  this.eventWrappers_.concat(Blockly.bindEvent_(this.svgGroup_,
+      'mousedown', this, this.onMouseDown_));
 };
 
 /**
@@ -201,45 +238,13 @@ Blockly.Flyout.prototype.setMetrics_ = function(yRatio) {
     this.workspace_.scrollY =
         -metrics.contentHeight * yRatio.y - metrics.contentTop;
   }
-  var y = this.workspace_.scrollY + metrics.absoluteTop;
-  this.workspace_.getCanvas().setAttribute('transform',
-                                           'translate(0,' + y + ')');
-};
-
-/**
- * Initializes the flyout.
- * @param {!Blockly.Workspace} workspace The workspace in which to create new
- *     blocks.
- */
-Blockly.Flyout.prototype.init = function(workspace) {
-  this.targetWorkspace_ = workspace;
-  // Add scrollbar.
-  this.scrollbar_ = new Blockly.Scrollbar(this.workspace_, false, false);
-
-  this.hide();
-
-  // If the document resizes, reposition the flyout.
-  this.eventWrappers_.concat(Blockly.bindEvent_(window,
-      goog.events.EventType.RESIZE, this, this.position_));
-  this.position_();
-  this.eventWrappers_.concat(Blockly.bindEvent_(this.svgGroup_,
-      'wheel', this, this.wheel_));
-  // Safari needs mousewheel.
-  this.eventWrappers_.concat(Blockly.bindEvent_(this.svgGroup_,
-      'mousewheel', this, this.wheel_));
-  this.eventWrappers_.concat(
-      Blockly.bindEvent_(this.targetWorkspace_.getCanvas(),
-      'blocklyWorkspaceChange', this, this.filterForCapacity_));
-  // Dragging the flyout up and down.
-  this.eventWrappers_.concat(Blockly.bindEvent_(this.svgGroup_,
-      'mousedown', this, this.onMouseDown_));
+  this.workspace_.translate(0, this.workspace_.scrollY + metrics.absoluteTop);
 };
 
 /**
  * Move the toolbox to the edge of the workspace.
- * @private
  */
-Blockly.Flyout.prototype.position_ = function() {
+Blockly.Flyout.prototype.position = function() {
   if (!this.isVisible()) {
     return;
   }
@@ -249,26 +254,26 @@ Blockly.Flyout.prototype.position_ = function() {
     return;
   }
   var edgeWidth = this.width_ - this.CORNER_RADIUS;
-  if (Blockly.RTL) {
+  if (this.RTL) {
     edgeWidth *= -1;
   }
-  var path = ['M ' + (Blockly.RTL ? this.width_ : 0) + ',0'];
+  var path = ['M ' + (this.RTL ? this.width_ : 0) + ',0'];
   path.push('h', edgeWidth);
   path.push('a', this.CORNER_RADIUS, this.CORNER_RADIUS, 0, 0,
-      Blockly.RTL ? 0 : 1,
-      Blockly.RTL ? -this.CORNER_RADIUS : this.CORNER_RADIUS,
+      this.RTL ? 0 : 1,
+      this.RTL ? -this.CORNER_RADIUS : this.CORNER_RADIUS,
       this.CORNER_RADIUS);
   path.push('v', Math.max(0, metrics.viewHeight - this.CORNER_RADIUS * 2));
   path.push('a', this.CORNER_RADIUS, this.CORNER_RADIUS, 0, 0,
-      Blockly.RTL ? 0 : 1,
-      Blockly.RTL ? this.CORNER_RADIUS : -this.CORNER_RADIUS,
+      this.RTL ? 0 : 1,
+      this.RTL ? this.CORNER_RADIUS : -this.CORNER_RADIUS,
       this.CORNER_RADIUS);
   path.push('h', -edgeWidth);
   path.push('z');
   this.svgBackground_.setAttribute('d', path.join(' '));
 
   var x = metrics.absoluteLeft;
-  if (Blockly.RTL) {
+  if (this.RTL) {
     x += metrics.viewWidth;
     x -= this.width_;
   }
@@ -282,6 +287,13 @@ Blockly.Flyout.prototype.position_ = function() {
   if (this.scrollbar_) {
     this.scrollbar_.resize();
   }
+};
+
+/**
+ * Scroll the flyout to the top.
+ */
+Blockly.Flyout.prototype.scrollToTop = function() {
+  this.scrollbar_.set(0);
 };
 
 /**
@@ -399,7 +411,7 @@ Blockly.Flyout.prototype.show = function(xmlList) {
     block.render();
     var root = block.getSvgRoot();
     var blockHW = block.getHeightWidth();
-    var x = Blockly.RTL ? 0 : margin + Blockly.BlockSvg.TAB_WIDTH;
+    var x = this.RTL ? 0 : margin + Blockly.BlockSvg.TAB_WIDTH;
     block.moveBy(x, cursorY);
     cursorY += blockHW.height + gaps[i];
 
@@ -418,16 +430,16 @@ Blockly.Flyout.prototype.show = function(xmlList) {
       this.listeners_.push(Blockly.bindEvent_(root, 'mousedown', null,
           this.blockMouseDown_(block)));
     }
-    this.listeners_.push(Blockly.bindEvent_(root, 'mouseover', block.svg_,
-        block.svg_.addSelect));
-    this.listeners_.push(Blockly.bindEvent_(root, 'mouseout', block.svg_,
-        block.svg_.removeSelect));
+    this.listeners_.push(Blockly.bindEvent_(root, 'mouseover', block,
+        block.addSelect));
+    this.listeners_.push(Blockly.bindEvent_(root, 'mouseout', block,
+        block.removeSelect));
     this.listeners_.push(Blockly.bindEvent_(rect, 'mousedown', null,
         this.createBlockFunc_(block)));
-    this.listeners_.push(Blockly.bindEvent_(rect, 'mouseover', block.svg_,
-        block.svg_.addSelect));
-    this.listeners_.push(Blockly.bindEvent_(rect, 'mouseout', block.svg_,
-        block.svg_.removeSelect));
+    this.listeners_.push(Blockly.bindEvent_(rect, 'mouseover', block,
+        block.addSelect));
+    this.listeners_.push(Blockly.bindEvent_(rect, 'mouseout', block,
+        block.removeSelect));
   }
 
   // IE 11 is an incompetant browser that fails to fire mouseout events.
@@ -435,7 +447,7 @@ Blockly.Flyout.prototype.show = function(xmlList) {
   var deselectAll = function(e) {
     var blocks = this.workspace_.getTopBlocks(false);
     for (var i = 0, block; block = blocks[i]; i++) {
-      block.svg_.removeSelect();
+      block.removeSelect();
     }
   };
   this.listeners_.push(Blockly.bindEvent_(this.svgBackground_, 'mouseover',
@@ -472,7 +484,7 @@ Blockly.Flyout.prototype.reflow = function() {
     for (var x = 0, block; block = blocks[x]; x++) {
       var blockHW = block.getHeightWidth();
       var blockXY = block.getRelativeToSurfaceXY();
-      if (Blockly.RTL) {
+      if (this.RTL) {
         // With the flyoutWidth known, right-align the blocks.
         var dx = flyoutWidth - margin - Blockly.BlockSvg.TAB_WIDTH - blockXY.x;
         block.moveBy(dx, 0);
@@ -482,27 +494,15 @@ Blockly.Flyout.prototype.reflow = function() {
         block.flyoutRect_.setAttribute('width', blockHW.width);
         block.flyoutRect_.setAttribute('height', blockHW.height);
         block.flyoutRect_.setAttribute('x',
-            Blockly.RTL ? blockXY.x - blockHW.width : blockXY.x);
+            this.RTL ? blockXY.x - blockHW.width : blockXY.x);
         block.flyoutRect_.setAttribute('y', blockXY.y);
       }
     }
-    // Record the width for .getMetrics_ and .position_.
+    // Record the width for .getMetrics_ and .position.
     this.width_ = flyoutWidth;
     // Fire a resize event to update the flyout's scrollbar.
     Blockly.fireUiEvent(window, 'resize');
   }
-};
-
-/**
- * Move a block to a specific location on the drawing surface.
- * @param {number} x Horizontal location.
- * @param {number} y Vertical location.
- */
-Blockly.Block.prototype.moveTo = function(x, y) {
-  var oldXY = this.getRelativeToSurfaceXY();
-  this.svg_.getRootElement().setAttribute('transform',
-      'translate(' + x + ', ' + y + ')');
-  this.moveConnections_(x - oldXY.x, y - oldXY.y);
 };
 
 /**
@@ -665,6 +665,23 @@ Blockly.Flyout.prototype.filterForCapacity_ = function() {
 };
 
 /**
+ * Return the deletion rectangle for this flyout.
+ * @return {goog.math.Rect} Rectangle in which to delete.
+ */
+Blockly.Flyout.prototype.getRect = function() {
+  // BIG_NUM is offscreen padding so that blocks dragged beyond the shown flyout
+  // area are still deleted.  Must be smaller than Infinity, but larger than
+  // the largest screen size.
+  var BIG_NUM = 10000000;
+  var x = Blockly.getSvgXY_(this.svgGroup_).x;
+  if (!this.RTL) {
+    x -= BIG_NUM;
+  }
+  return new goog.math.Rect(x, -BIG_NUM,
+      BIG_NUM + this.width_, this.height_ + 2 * BIG_NUM);
+};
+
+/**
  * Stop binding to the global mouseup and mousemove events.
  * @private
  */
@@ -688,21 +705,4 @@ Blockly.Flyout.terminateDrag_ = function() {
   Blockly.Flyout.startDownEvent_ = null;
   Blockly.Flyout.startBlock_ = null;
   Blockly.Flyout.startFlyout_ = null;
-};
-
-/**
- * Return the deletion rectangle for this flyout.
- * @return {goog.math.Rect} Rectangle in which to delete.
- */
-Blockly.Flyout.prototype.getRect = function() {
-  // BIG_NUM is offscreen padding so that blocks dragged beyond the shown flyout
-  // area are still deleted.  Must be smaller than Infinity, but larger than
-  // the largest screen size.
-  var BIG_NUM = 10000000;
-  var x = Blockly.getSvgXY_(this.svgGroup_).x;
-  if (!Blockly.RTL) {
-    x -= BIG_NUM;
-  }
-  return new goog.math.Rect(x, -BIG_NUM,
-      BIG_NUM + this.width_, this.height_ + 2 * BIG_NUM);
 };

@@ -26,59 +26,21 @@
 
 goog.provide('Blockly.Block');
 
-goog.require('Blockly.BlockSvg');
 goog.require('Blockly.Blocks');
 goog.require('Blockly.Comment');
 goog.require('Blockly.Connection');
 goog.require('Blockly.ParamConnection');
 goog.require('Blockly.ContextMenu');
 goog.require('Blockly.Input');
-goog.require('Blockly.Msg');
 goog.require('Blockly.Mutator');
 goog.require('Blockly.Warning');
 goog.require('Blockly.Workspace');
 goog.require('Blockly.Xml');
-goog.require('goog.Timer');
 goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.color');
+goog.require('goog.math.Coordinate');
 goog.require('goog.string');
-
-/**
- * Unique ID counter for created blocks.
- * @private
- */
-Blockly.uidCounter_ = 0;
-
-/**
- * Get the Blockly.uidCounter_
- * @return {number}
- */
-Blockly.getUidCounter = function() {
-  return Blockly.uidCounter_;
-};
-
-/**
- * Set the Blockly.uidCounter_
- * @param {number} val The value to set the counter to.
- */
-Blockly.setUidCounter = function(val) {
-  Blockly.uidCounter_ = val;
-};
-
-/**
- * Generate a unique id.  This will be locally or globally unique, depending on
- * whether we are in single user or realtime collaborative mode.
- * @return {string}
- */
-Blockly.genUid = function() {
-  var uid = (++Blockly.uidCounter_).toString();
-  if (Blockly.Realtime.isEnabled()) {
-    return Blockly.Realtime.genUid(uid);
-  } else {
-    return uid;
-  }
-};
 
 /**
 * Class for one block.
@@ -102,7 +64,11 @@ Blockly.Block.obtain = function(workspace, prototypeName) {
   if (Blockly.Realtime.isEnabled()) {
     return Blockly.Realtime.obtainBlock(workspace, prototypeName);
   } else {
-    var newBlock = new Blockly.Block();
+    if (workspace.rendered) {
+      var newBlock = new Blockly.BlockSvg();
+    } else {
+      var newBlock = new Blockly.Block();
+    }
     newBlock.initialize(workspace, prototypeName);
     return newBlock;
   }
@@ -115,7 +81,7 @@ Blockly.Block.obtain = function(workspace, prototypeName) {
  *     type-specific functions for this block.
  */
 Blockly.Block.prototype.initialize = function(workspace, prototypeName) {
-  this.id = Blockly.genUid();
+  this.id = Blockly.Blocks.genUid();
   workspace.addTopBlock(this);
   this.fill(workspace, prototypeName);
 
@@ -136,7 +102,7 @@ Blockly.Block.prototype.fill = function(workspace, prototypeName) {
   this.nextConnection = null;
   this.previousConnection = null;
   this.inputList = [];
-  this.inputsInline = false;
+  this.inputsInline = undefined;
   this.rendered = false;
   this.disabled = false;
   this.tooltip = '';
@@ -149,8 +115,13 @@ Blockly.Block.prototype.fill = function(workspace, prototypeName) {
   this.editable_ = true;
   this.collapsed_ = false;
 
+  this.comment = null;
+
+  this.xy_ = new goog.math.Coordinate(0, 0);
+
   this.workspace = workspace;
   this.isInFlyout = workspace.isFlyout;
+  this.RTL = workspace.RTL;
 
   // Copy the type-specific functions and data from the prototype.
   if (prototypeName) {
@@ -164,6 +135,8 @@ Blockly.Block.prototype.fill = function(workspace, prototypeName) {
   if (goog.isFunction(this.init)) {
     this.init();
   }
+  // Record initial inline state.
+  this.inputsInlineDefault = this.inputsInline;
 };
 
 /**
@@ -181,155 +154,6 @@ Blockly.Block.getById = function(id, workspace) {
 };
 
 /**
- * Pointer to SVG representation of the block.
- * @type {Blockly.BlockSvg}
- * @private
- */
-Blockly.Block.prototype.svg_ = null;
-
-/**
- * Block's mutator icon (if any).
- * @type {Blockly.Mutator}
- */
-Blockly.Block.prototype.mutator = null;
-
-/**
- * Block's comment icon (if any).
- * @type {Blockly.Comment}
- */
-Blockly.Block.prototype.comment = null;
-
-/**
- * Block's warning icon (if any).
- * @type {Blockly.Warning}
- */
-Blockly.Block.prototype.warning = null;
-
-/**
- * Returns a list of mutator, comment, and warning icons.
- * @return {!Array} List of icons.
- */
-Blockly.Block.prototype.getIcons = function() {
-  var icons = [];
-  if (this.mutator) {
-    icons.push(this.mutator);
-  }
-  if (this.comment) {
-    icons.push(this.comment);
-  }
-  if (this.warning) {
-    icons.push(this.warning);
-  }
-  return icons;
-};
-
-/**
- * Create and initialize the SVG representation of the block.
- */
-Blockly.Block.prototype.initSvg = function() {
-  this.svg_ = new Blockly.BlockSvg(this);
-  this.svg_.init();
-  if (!Blockly.readOnly) {
-    Blockly.bindEvent_(this.svg_.getRootElement(), 'mousedown', this,
-                       this.onMouseDown_);
-  }
-  this.workspace.getCanvas().appendChild(this.svg_.getRootElement());
-};
-
-/**
- * Return the root node of the SVG or null if none exists.
- * @return {Element} The root SVG node (probably a group).
- */
-Blockly.Block.prototype.getSvgRoot = function() {
-  return this.svg_ && this.svg_.getRootElement();
-};
-
-/**
- * Is the mouse dragging a block?
- * 0 - No drag operation.
- * 1 - Still inside the sticky DRAG_RADIUS.
- * 2 - Freely draggable.
- * @private
- */
-Blockly.Block.dragMode_ = 0;
-
-/**
- * Wrapper function called when a mouseUp occurs during a drag operation.
- * @type {Array.<!Array>}
- * @private
- */
-Blockly.Block.onMouseUpWrapper_ = null;
-
-/**
- * Wrapper function called when a mouseMove occurs during a drag operation.
- * @type {Array.<!Array>}
- * @private
- */
-Blockly.Block.onMouseMoveWrapper_ = null;
-
-/**
- * Stop binding to the global mouseup and mousemove events.
- * @private
- */
-Blockly.Block.terminateDrag_ = function() {
-  if (Blockly.Block.onMouseUpWrapper_) {
-    Blockly.unbindEvent_(Blockly.Block.onMouseUpWrapper_);
-    Blockly.Block.onMouseUpWrapper_ = null;
-  }
-  if (Blockly.Block.onMouseMoveWrapper_) {
-    Blockly.unbindEvent_(Blockly.Block.onMouseMoveWrapper_);
-    Blockly.Block.onMouseMoveWrapper_ = null;
-  }
-  var selected = Blockly.selected;
-  if (Blockly.Block.dragMode_ == 2) {
-    // Terminate a drag operation.
-    if (selected) {
-      // Update the connection locations.
-      var xy = selected.getRelativeToSurfaceXY();
-      var dx = xy.x - selected.startDragX;
-      var dy = xy.y - selected.startDragY;
-      selected.moveConnections_(dx, dy);
-      delete selected.draggedBubbles_;
-      selected.setDragging_(false);
-      selected.render();
-      goog.Timer.callOnce(
-          selected.bumpNeighbours_, Blockly.BUMP_DELAY, selected);
-      // Fire an event to allow scrollbars to resize.
-      Blockly.fireUiEvent(window, 'resize');
-    }
-  }
-  if (selected) {
-    selected.workspace.fireChangeEvent();
-  }
-  Blockly.Block.dragMode_ = 0;
-  Blockly.Css.setCursor(Blockly.Css.Cursor.OPEN);
-};
-
-/**
- * Select this block.  Highlight it visually.
- */
-Blockly.Block.prototype.select = function() {
-  goog.asserts.assertObject(this.svg_, 'Block is not rendered.');
-  if (Blockly.selected) {
-    // Unselect any previously selected block.
-    Blockly.selected.unselect();
-  }
-  Blockly.selected = this;
-  this.svg_.addSelect();
-  Blockly.fireUiEvent(this.workspace.getCanvas(), 'blocklySelectChange');
-};
-
-/**
- * Unselect this block.  Remove its highlighting.
- */
-Blockly.Block.prototype.unselect = function() {
-  goog.asserts.assertObject(this.svg_, 'Block is not rendered.');
-  Blockly.selected = null;
-  this.svg_.removeSelect();
-  Blockly.fireUiEvent(this.workspace.getCanvas(), 'blocklySelectChange');
-};
-
-/**
  * Dispose of this block.
  * @param {boolean} healStack If true, then try to heal any gap by connecting
  *     the next statement with the previous statement.  Otherwise, dispose of
@@ -340,13 +164,7 @@ Blockly.Block.prototype.unselect = function() {
  */
 Blockly.Block.prototype.dispose = function(healStack, animate,
                                            opt_dontRemoveFromWorkspace) {
-  // Switch off rerendering.
-  this.rendered = false;
   this.unplug(healStack, false);
-
-  if (animate && this.svg_) {
-    this.svg_.disposeUiEffect();
-  }
 
   // This block is now at the top of the workspace.
   // Remove this block from the workspace's list of top-most blocks.
@@ -361,42 +179,26 @@ Blockly.Block.prototype.dispose = function(healStack, animate,
 
   if (Blockly.selected == this) {
     Blockly.selected = null;
-    // If there's a drag in-progress, unlink the mouse events.
-    Blockly.terminateDrag_();
-  }
-
-  // If this block has a context menu open, close it.
-  if (Blockly.ContextMenu.currentBlock == this) {
-    Blockly.ContextMenu.hide();
   }
 
   // First, dispose of all my children.
-  for (var x = this.childBlocks_.length - 1; x >= 0; x--) {
-    this.childBlocks_[x].dispose(false);
+  for (var i = this.childBlocks_.length - 1; i >= 0; i--) {
+    this.childBlocks_[i].dispose(false);
   }
   // Then dispose of myself.
-  var icons = this.getIcons();
-  for (var x = 0; x < icons.length; x++) {
-    icons[x].dispose();
-  }
   // Dispose of all inputs and their fields.
-  for (var x = 0, input; input = this.inputList[x]; x++) {
+  for (var i = 0, input; input = this.inputList[i]; i++) {
     input.dispose();
   }
-  this.inputList = [];
+  this.inputList.length = 0;
   // Dispose of any remaining connections (next/previous/output).
   var connections = this.getConnections_(true);
-  for (var x = 0; x < connections.length; x++) {
-    var connection = connections[x];
+  for (var i = 0; i < connections.length; i++) {
+    var connection = connections[i];
     if (connection.targetConnection) {
       connection.disconnect();
     }
-    connections[x].dispose();
-  }
-  // Dispose of the SVG and break circular references.
-  if (this.svg_) {
-    this.svg_.dispose();
-    this.svg_ = null;
+    connections[i].dispose();
   }
   // Remove from Realtime set of blocks.
   if (Blockly.Realtime.isEnabled() && !Blockly.Realtime.withinSync) {
@@ -438,45 +240,12 @@ Blockly.Block.prototype.unplug = function(healStack, bump) {
   }
   if (bump) {
     // Bump the block sideways.
-    var dx = Blockly.SNAP_RADIUS * (Blockly.RTL ? -1 : 1);
+    var dx = Blockly.SNAP_RADIUS * (this.RTL ? -1 : 1);
     var dy = Blockly.SNAP_RADIUS * 2;
     this.moveBy(dx, dy);
   }
 };
 
-/**
- * Return the coordinates of the top-left corner of this block relative to the
- * drawing surface's origin (0,0).
- * @return {!Object} Object with .x and .y properties.
- */
-Blockly.Block.prototype.getRelativeToSurfaceXY = function() {
-  var x = 0;
-  var y = 0;
-  if (this.svg_) {
-    var element = this.svg_.getRootElement();
-    do {
-      // Loop through this block and every parent.
-      var xy = Blockly.getRelativeXY_(element);
-      x += xy.x;
-      y += xy.y;
-      element = element.parentNode;
-    } while (element && element != this.workspace.getCanvas());
-  }
-  return {x: x, y: y};
-};
-
-/**
- * Move a block by a relative offset. Only works for top blocks.
- * @param {number} dx Horizontal offset.
- * @param {number} dy Vertical offset.
- */
-Blockly.Block.prototype.moveBy = function(dx, dy) {
-  var xy = this.getRelativeToSurfaceXY();
-  this.svg_.getRootElement().setAttribute('transform',
-      'translate(' + (xy.x + dx) + ', ' + (xy.y + dy) + ')');
-  this.moveConnections_(dx, dy);
-  Blockly.Realtime.blockChanged(this);
-};
 
 /**
  * Shift a block by an offset relative to it's current postion.
@@ -491,158 +260,6 @@ Blockly.Block.prototype.shiftBy = function(dx, dy) {
 }
 
 /**
- * Returns a bounding box describing the dimensions of this block
- * and any blocks stacked below it.
- * @return {!Object} Object with height and width properties.
- */
-Blockly.Block.prototype.getHeightWidth = function() {
-  var height = this.svg_.height;
-  var width = this.svg_.width;
-  // Recursively add size of subsequent blocks.
-  var nextBlock = this.getNextBlock();
-  if (nextBlock) {
-    var nextHeightWidth = nextBlock.getHeightWidth();
-    height += nextHeightWidth.height - 4;  // Height of tab.
-    width = Math.max(width, nextHeightWidth.width);
-  }
-  return {height: height, width: width};
-};
-
-/**
- * Handle a mouse-down on an SVG block.
- * @param {!Event} e Mouse down event.
- * @private
- */
-Blockly.Block.prototype.onMouseDown_ = function(e) {
-  if (this.isInFlyout) {
-    return;
-  }
-  // Update Blockly's knowledge of its own location.
-  Blockly.svgResize();
-  Blockly.terminateDrag_();
-  this.select();
-  Blockly.hideChaff();
-  if (Blockly.isRightButton(e)) {
-    // Right-click.
-    this.showContextMenu_(e);
-  } else if (!this.isMovable()) {
-    // Allow unmovable blocks to be selected and context menued, but not
-    // dragged.  Let this event bubble up to document, so the workspace may be
-    // dragged instead.
-    return;
-  } else {
-    // Left-click (or middle click)
-    Blockly.removeAllRanges();
-    Blockly.Css.setCursor(Blockly.Css.Cursor.CLOSED);
-    // Look up the current translation and record it.
-    var xy = this.getRelativeToSurfaceXY();
-    this.startDragX = xy.x;
-    this.startDragY = xy.y;
-    // Record the current mouse position.
-    this.startDragMouseX = e.clientX;
-    this.startDragMouseY = e.clientY;
-    Blockly.Block.dragMode_ = 1;
-    Blockly.Block.onMouseUpWrapper_ = Blockly.bindEvent_(document,
-        'mouseup', this, this.onMouseUp_);
-    Blockly.Block.onMouseMoveWrapper_ = Blockly.bindEvent_(document,
-        'mousemove', this, this.onMouseMove_);
-    // Build a list of bubbles that need to be moved and where they started.
-    this.draggedBubbles_ = [];
-    var descendants = this.getDescendants();
-    for (var x = 0, descendant; descendant = descendants[x]; x++) {
-      var icons = descendant.getIcons();
-      for (var y = 0; y < icons.length; y++) {
-        var data = icons[y].getIconLocation();
-        data.bubble = icons[y];
-        this.draggedBubbles_.push(data);
-      }
-    }
-  }
-  // This event has been handled.  No need to bubble up to the document.
-  e.stopPropagation();
-};
-
-/**
- * Handle a mouse-up anywhere in the SVG pane.  Is only registered when a
- * block is clicked.  We can't use mouseUp on the block since a fast-moving
- * cursor can briefly escape the block before it catches up.
- * @param {!Event} e Mouse up event.
- * @private
- */
-Blockly.Block.prototype.onMouseUp_ = function(e) {
-  var this_ = this;
-  Blockly.doCommand(function() {
-    Blockly.terminateDrag_();
-    if (Blockly.selected && Blockly.highlightedConnection_) {
-
-      // get the block the highlighted connection is currently connected to
-      // Blockly highlights the next connections, so this gives us the block we need to displace
-      var target = Blockly.highlightedConnection_.targetBlock();
-
-      // clean up any displacement
-      if (target && target.previousConnection) {
-        target.shiftBy(0, -this_.getHeightWidth().height);
-      }
-      var blocksToRevert = [];
-      var current = target ? target : Blockly.highlightedConnection_.sourceBlock_;
-      blocksToRevert.push(current);
-      while(current.getSurroundParent()) {
-        blocksToRevert.push(current.getSurroundParent());
-        current = current.getSurroundParent();
-      }
-      blocksToRevert.forEach(function (b) {
-        b.svg_.revertContainer();
-      });
-      $('.placeholder').remove();
-
-      // Connect two blocks together.
-      Blockly.localConnection_.connect(Blockly.highlightedConnection_);
-      if (this_.svg_) {
-        // Trigger a connection animation.
-        // Determine which connection is inferior (lower in the source stack).
-        var inferiorConnection;
-        if (Blockly.localConnection_.isSuperior()) {
-          inferiorConnection = Blockly.highlightedConnection_;
-        } else {
-          inferiorConnection = Blockly.localConnection_;
-        }
-        inferiorConnection.sourceBlock_.svg_.connectionUiEffect();
-      }
-      if (this_.workspace.trashcan) {
-        // Don't throw an object in the trash can if it just got connected.
-        this_.workspace.trashcan.close();
-      }
-    } else if (this_.workspace.isDeleteArea(e)) {
-      var trashcan = this_.workspace.trashcan;
-      if (trashcan) {
-        goog.Timer.callOnce(trashcan.close, 100, trashcan);
-      }
-      Blockly.selected.dispose(false, true);
-      // Dropping a block on the trash can will usually cause the workspace to
-      // resize to contain the newly positioned block.  Force a second resize
-      // now that the block has been deleted.
-      Blockly.fireUiEvent(window, 'resize');
-    }
-    if (Blockly.highlightedConnection_) {
-      Blockly.highlightedConnection_.unhighlight();
-      Blockly.highlightedConnection_ = null;
-    }
-    Blockly.Css.setCursor(Blockly.Css.Cursor.OPEN);
-  });
-};
-
-/**
- * Load the block's help page in a new window.
- * @private
- */
-Blockly.Block.prototype.showHelp_ = function() {
-  var url = goog.isFunction(this.helpUrl) ? this.helpUrl() : this.helpUrl;
-  if (url) {
-    window.open(url);
-  }
-};
-
-/**
  * Duplicate this block and its children.
  * @return {!Blockly.Block} The duplicate.
  * @private
@@ -655,7 +272,7 @@ Blockly.Block.prototype.duplicate_ = function() {
       /** @type {!Blockly.Workspace} */ (this.workspace), xmlBlock);
   // Move the duplicate next to the old block.
   var xy = this.getRelativeToSurfaceXY();
-  if (Blockly.RTL) {
+  if (this.RTL) {
     xy.x -= Blockly.SNAP_RADIUS;
   } else {
     xy.x += Blockly.SNAP_RADIUS;
@@ -677,454 +294,31 @@ Blockly.Block.prototype.duplicateParam = function() {
 };
 
 /**
- * Show the context menu for this block.
- * @param {!Event} e Mouse event.
- * @private
- */
-Blockly.Block.prototype.showContextMenu_ = function(e) {
-  if (Blockly.readOnly || !this.contextMenu) {
-    return;
-  }
-  // Save the current block in a variable for use in closures.
-  var block = this;
-  var options = [];
-
-  if (this.isDeletable() && this.isMovable() && !block.isInFlyout) {
-    // Option to duplicate this block.
-    var duplicateOption = {
-      text: Blockly.Msg.DUPLICATE_BLOCK,
-      enabled: true,
-      callback: function() {
-        block.duplicate_();
-      }
-    };
-    if (this.getDescendants().length > this.workspace.remainingCapacity()) {
-      duplicateOption.enabled = false;
-    }
-    options.push(duplicateOption);
-
-    if (this.isEditable() && !this.collapsed_ && Blockly.comments) {
-      // Option to add/remove a comment.
-      var commentOption = {enabled: true};
-      if (this.comment) {
-        commentOption.text = Blockly.Msg.REMOVE_COMMENT;
-        commentOption.callback = function() {
-          block.setCommentText(null);
-        };
-      } else {
-        commentOption.text = Blockly.Msg.ADD_COMMENT;
-        commentOption.callback = function() {
-          block.setCommentText('');
-        };
-      }
-      options.push(commentOption);
-    }
-
-    // Option to make block inline.
-    if (!this.collapsed_) {
-      for (var i = 0; i < this.inputList.length; i++) {
-        if (this.inputList[i].type == Blockly.INPUT_VALUE) {
-          // Only display this option if there is a value input on the block.
-          var inlineOption = {enabled: true};
-          inlineOption.text = this.inputsInline ? Blockly.Msg.EXTERNAL_INPUTS :
-                                                  Blockly.Msg.INLINE_INPUTS;
-          inlineOption.callback = function() {
-            block.setInputsInline(!block.inputsInline);
-          };
-          options.push(inlineOption);
-          break;
-        }
-      }
-    }
-
-    if (Blockly.collapse) {
-      // Option to collapse/expand block.
-      if (this.collapsed_) {
-        var expandOption = {enabled: true};
-        expandOption.text = Blockly.Msg.EXPAND_BLOCK;
-        expandOption.callback = function() {
-          block.setCollapsed(false);
-        };
-        options.push(expandOption);
-      } else {
-        var collapseOption = {enabled: true};
-        collapseOption.text = Blockly.Msg.COLLAPSE_BLOCK;
-        collapseOption.callback = function() {
-          block.setCollapsed(true);
-        };
-        options.push(collapseOption);
-      }
-    }
-
-    if (Blockly.disable) {
-      // Option to disable/enable block.
-      var disableOption = {
-        text: this.disabled ?
-            Blockly.Msg.ENABLE_BLOCK : Blockly.Msg.DISABLE_BLOCK,
-        enabled: !this.getInheritedDisabled(),
-        callback: function() {
-          block.setDisabled(!block.disabled);
-        }
-      };
-      options.push(disableOption);
-    }
-
-    // Option to delete this block.
-    // Count the number of blocks that are nested in this block.
-    var descendantCount = this.getDescendants().length;
-    var nextBlock = this.getNextBlock();
-    if (nextBlock) {
-      // Blocks in the current stack would survive this block's deletion.
-      descendantCount -= nextBlock.getDescendants().length;
-    }
-    var deleteOption = {
-      text: descendantCount == 1 ? Blockly.Msg.DELETE_BLOCK :
-          Blockly.Msg.DELETE_X_BLOCKS.replace('%1', String(descendantCount)),
-      enabled: true,
-      callback: function() {
-        block.dispose(true, true);
-      }
-    };
-    options.push(deleteOption);
-  }
-
-  // Option to get help.
-  if (Blockly.help) {
-    var url = goog.isFunction(this.helpUrl) ? this.helpUrl() : this.helpUrl;
-    var helpOption = {enabled: !!url};
-    helpOption.text = Blockly.Msg.HELP;
-    helpOption.callback = function() {
-        block.showHelp_();
-    };
-    options.push(helpOption);
-  }
-
-  // Allow the block to add or modify options.
-  if (this.customContextMenu && !block.isInFlyout) {
-    this.customContextMenu(options);
-  }
-
-  Blockly.ContextMenu.show(e, options);
-  Blockly.ContextMenu.currentBlock = this;
-};
-
-/**
- * Returns all connections originating from this block.
- * @param {boolean} all If true, return all connections even hidden ones.
- *     Otherwise return those that are visible.
- * @return {!Array.<!Blockly.Connection>} Array of connections.
- * @private
- */
-Blockly.Block.prototype.getConnections_ = function(all) {
-  var myConnections = [];
-  if (all || this.rendered) {
-    if (this.outputConnection) {
-      myConnections.push(this.outputConnection);
-    }
-    if (this.nextConnection) {
-      myConnections.push(this.nextConnection);
-    }
-    if (this.previousConnection) {
-      myConnections.push(this.previousConnection);
-    }
-    if (all || !this.collapsed_) {
-      for (var x = 0, input; input = this.inputList[x]; x++) {
-        if (input.connection) {
-          myConnections.push(input.connection);
-        }
-      }
-    }
-  }
-  return myConnections;
-};
-
-/**
- * Move the connections for this block and all blocks attached under it.
- * Also update any attached bubbles.
- * @param {number} dx Horizontal offset from current location.
- * @param {number} dy Vertical offset from current location.
- * @private
- */
-Blockly.Block.prototype.moveConnections_ = function(dx, dy) {
-  if (!this.rendered) {
-    // Rendering is required to lay out the blocks.
-    // This is probably an invisible block attached to a collapsed block.
-    return;
-  }
-  var myConnections = this.getConnections_(false);
-  for (var x = 0; x < myConnections.length; x++) {
-    myConnections[x].moveBy(dx, dy);
-  }
-  var icons = this.getIcons();
-  for (var x = 0; x < icons.length; x++) {
-    icons[x].computeIconLocation();
-  }
-
-  // Recurse through all blocks attached under this one.
-  for (var x = 0; x < this.childBlocks_.length; x++) {
-    this.childBlocks_[x].moveConnections_(dx, dy);
-  }
-};
-
-/**
- * Recursively adds or removes the dragging class to this node and its children.
- * @param {boolean} adding True if adding, false if removing.
- * @private
- */
-Blockly.Block.prototype.setDragging_ = function(adding) {
-  if (adding) {
-    this.svg_.addDragging();
-  } else {
-    this.svg_.removeDragging();
-  }
-  // Recurse through all blocks attached under this one.
-  for (var x = 0; x < this.childBlocks_.length; x++) {
-    this.childBlocks_[x].setDragging_(adding);
-  }
-};
-
-/**
- * Drag this block to follow the mouse.
- * @param {!Event} e Mouse move event.
- * @private
- */
-Blockly.Block.prototype.onMouseMove_ = function(e) {
-  var this_ = this;
-  Blockly.doCommand(function() {
-    if (e.type == 'mousemove' && e.clientX <= 1 && e.clientY == 0 &&
-        e.button == 0) {
-      /* HACK:
-       Safari Mobile 6.0 and Chrome for Android 18.0 fire rogue mousemove
-       events on certain touch actions. Ignore events with these signatures.
-       This may result in a one-pixel blind spot in other browsers,
-       but this shouldn't be noticeable. */
-      e.stopPropagation();
-      return;
-    }
-    Blockly.removeAllRanges();
-    var dx = e.clientX - this_.startDragMouseX;
-    var dy = e.clientY - this_.startDragMouseY;
-    if (Blockly.Block.dragMode_ == 1) {
-      // Still dragging within the sticky DRAG_RADIUS.
-      var dr = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-      if (dr > Blockly.DRAG_RADIUS) {
-        // Switch to unrestricted dragging.
-        Blockly.Block.dragMode_ = 2;
-        // Push this block to the very top of the stack.
-        this_.setParent(null);
-        this_.setDragging_(true);
-        this_.workspace.recordDeleteAreas();
-      }
-    }
-    if (Blockly.Block.dragMode_ == 2) {
-      // Unrestricted dragging.
-      var x = this_.startDragX + dx;
-      var y = this_.startDragY + dy;
-      this_.svg_.getRootElement().setAttribute('transform',
-          'translate(' + x + ', ' + y + ')');
-      // Drag all the nested bubbles.
-      for (var i = 0; i < this_.draggedBubbles_.length; i++) {
-        var commentData = this_.draggedBubbles_[i];
-        commentData.bubble.setIconLocation(commentData.x + dx,
-            commentData.y + dy);
-      }
-
-      // Check to see if any of this block's connections are within range of
-      // another block's connection.
-      var myConnections = this_.getConnections_(false);
-      var closestConnection = null;
-      var localConnection = null;
-      var radiusConnection = Blockly.SNAP_RADIUS;
-      for (var i = 0; i < myConnections.length; i++) {
-        var myConnection = myConnections[i];
-        var neighbour = myConnection.closest(radiusConnection, dx, dy);
-        if (neighbour.connection) {
-          closestConnection = neighbour.connection;
-          localConnection = myConnection;
-          radiusConnection = neighbour.radius;
-        }
-      }
-
-      // Remove connection highlighting if needed.
-      if (Blockly.highlightedConnection_ &&
-          Blockly.highlightedConnection_ != closestConnection) {
-
-        // get the block the highlighted connection originates from
-        var source = Blockly.highlightedConnection_.sourceBlock_;
-
-        // block to start searching for containing blocks
-        var searchStartBlock;
-        // containing blocks (e.g. repeat) that need to be reverted
-        var blocksToRevert = [];
-
-        // un-expand using saved initial height (i.e. this_.svg_.renderBaseHeight)
-        if (this_.getNextStatementInput()) {
-          this_.svg_.renderSteps[this_.svg_.renderHeightIndex] = this_.svg_.renderBaseHeight;
-          this_.svg_.svgPath_.setAttribute('d', this_.svg_.renderSteps.join(' '));
-        }
-
-        // clean up displacement
-        // Blockly highlights the next connections, so this gives us the block we need to displace
-        if (Blockly.highlightedConnection_.targetBlock()) {
-          var target = Blockly.highlightedConnection_.targetBlock();
-          target.shiftBy(0, -this_.getHeightWidth().height);
-          searchStartBlock = target;
-        } else {
-          searchStartBlock = source;
-        }
-        // nested statement connection
-        if (source.getNextStatementInput()) {
-          // we should include the source in the containing blocks to revert
-          blocksToRevert.push(source);
-          searchStartBlock = source;
-        }
-        $('.placeholder').remove();
-
-        // find and revert containing blocks
-        if (searchStartBlock) {
-          var current = searchStartBlock;
-          while(current.getSurroundParent()) {
-            blocksToRevert.push(current.getSurroundParent());
-            current = current.getSurroundParent();
-          }
-          blocksToRevert.forEach(function (b) {
-            b.svg_.revertContainer();
-          });
-        }
-        Blockly.highlightedConnection_.unhighlight();
-        Blockly.highlightedConnection_ = null;
-        Blockly.localConnection_ = null;
-      }
-
-      // Add connection highlighting if needed.
-      if (closestConnection &&
-          closestConnection != Blockly.highlightedConnection_) {
-        closestConnection.highlight();
-        Blockly.highlightedConnection_ = closestConnection;
-        Blockly.localConnection_ = localConnection;
-
-        // expand around target stack if applicable
-        var expanding = false;
-        var input = this_.getNextStatementInput();
-        if (input && localConnection === input.connection) {
-          var h = closestConnection.sourceBlock_.getHeightWidth().height;
-          this_.svg_.renderSteps[this_.svg_.renderHeightIndex] = h;
-          this_.svg_.svgPath_.setAttribute('d', this_.svg_.renderSteps.join(' '));
-          expanding = true;
-        }
-
-        // get the block the highlighted connection originates from
-        var source = Blockly.highlightedConnection_.sourceBlock_;
-        var sourceInput = source.getNextStatementInput();
-
-        // create outline of dragged block
-        var outline = $('.blocklySelected').clone();
-        outline.children().not('.blocklyPath').remove();
-        outline.attr('class', outline.attr('class') + " placeholder");
-
-        // block to start searching for containing blocks
-        var searchStartBlock;
-        // containing blocks (e.g. repeat) that need to be expanded
-        var blocksToExpand = [];
-
-        // if we are inserting into a stack, we displace the blocks below in all cases
-        if (Blockly.highlightedConnection_.targetBlock()) {
-          // Blockly highlights the next connections, so this gives us the block we need to displace
-          var target = Blockly.highlightedConnection_.targetBlock();
-          outline.attr('transform', "translate(0," + (-this_.getHeightWidth().height) + ")"); // position outline
-          target.shiftBy(0, this_.getHeightWidth().height); // shift existing blocks
-          $(target.svg_.getRootElement()).append(outline); // add outline to svg
-          searchStartBlock = target;
-        } else { // otherwise we case on the nature of the connection
-          if (expanding) {
-            var xy = this_.getRelativeToSurfaceXY();
-            // adjustment so the connection of dragged block lines up with highlighted connection
-            var sourceDx = source.previousConnection.x_ - source.getRelativeToSurfaceXY().x;
-            // connections aren't moved when block is dragged, so we add in the block position delta (dx,dy), computed above
-            outline.attr('transform', "translate(" + (-(input.connection.x_ + dx) + xy.x + sourceDx) + "," + (-(input.connection.y_ + dy) + xy.y) + ")"); // position outline
-            // no need to shift existing blocks
-            $(source.svg_.getRootElement()).append(outline); // add outline to svg
-            // no search for containing blocks needed
-          }
-          // next connection
-          if (Blockly.highlightedConnection_ === source.nextConnection) {
-            outline.attr('transform', "translate(0," + (source.getHeightWidth().height) + ")"); // position outline
-            // no need to shift existing blocks
-            $(source.svg_.getRootElement()).append(outline); // add outline to svg
-            searchStartBlock = source;
-          }
-          // previous connection
-          if (Blockly.highlightedConnection_ === source.previousConnection && !expanding) {
-            outline.attr('transform', "translate(0," + (-this_.getHeightWidth().height) + ")"); // position outline
-            // no need to shift existing blocks
-            $(source.svg_.getRootElement()).append(outline); // add outline to svg
-            // no search for containing blocks needed
-          }
-          // nested statement connection
-          if (source.inputList && sourceInput && Blockly.highlightedConnection_ === sourceInput.connection) {
-            var xy = source.getRelativeToSurfaceXY();
-            // adjustment so the connection of dragged block lines up with highlighted connection
-            // connections aren't moved when block is dragged, so we add in the block position delta (dx), computed above
-            var thisDx = this_.previousConnection.x_ + dx - this_.getRelativeToSurfaceXY().x;
-            outline.attr('transform', "translate(" + ((sourceInput.connection.x_ - xy.x) - thisDx) + "," + (sourceInput.connection.y_ - xy.y) + ")"); // position outline
-            // no need to shift existing blocks
-            $(source.svg_.getRootElement()).append(outline); // add outline to svg
-            searchStartBlock = source;
-            // we should include the source in the containing blocks to expand
-            blocksToExpand.push(source);
-          }
-        }
-
-        // find and expand containing blocks
-        if (searchStartBlock) {
-          var current = searchStartBlock;
-          while(current.getSurroundParent()) {
-            blocksToExpand.push(current.getSurroundParent());
-            current = current.getSurroundParent();
-          }
-          blocksToExpand.forEach(function (b) {
-            b.svg_.resizeContainer(this_.getHeightWidth().height);
-          });
-        }
-      }
-      // Provide visual indication of whether the block will be deleted if
-      // dropped here.
-      if (this_.isDeletable()) {
-        this_.workspace.isDeleteArea(e);
-      }
-    }
-    // This event has been handled.  No need to bubble up to the document.
-    e.stopPropagation();
-  });
-};
-
-/**
  * Bump unconnected blocks out of alignment.  Two blocks which aren't actually
  * connected should not coincidentally line up on screen.
  * @private
  */
 Blockly.Block.prototype.bumpNeighbours_ = function() {
-  if (Blockly.Block.dragMode_ != 0) {
-    // Don't bump blocks during a drag.
-    return;
+  if (!this.workspace) {
+    return;  // Deleted block.
+  }
+  if (Blockly.dragMode_ != 0) {
+    return;  // Don't bump blocks during a drag.
   }
   var rootBlock = this.getRootBlock();
   if (rootBlock.isInFlyout) {
-    // Don't move blocks around in a flyout.
-    return;
+    return;  // Don't move blocks around in a flyout.
   }
   // Loop though every connection on this block.
   var myConnections = this.getConnections_(false);
-  for (var x = 0; x < myConnections.length; x++) {
-    var connection = myConnections[x];
+  for (var i = 0, connection; connection = myConnections[i]; i++) {
     // Spider down from this block bumping all sub-blocks.
     if (connection.targetConnection && connection.isSuperior()) {
       connection.targetBlock().bumpNeighbours_();
     }
 
     var neighbours = connection.neighbours_(Blockly.SNAP_RADIUS);
-    for (var y = 0; y < neighbours.length; y++) {
-      var otherConnection = neighbours[y];
+    for (var j = 0, otherConnection; otherConnection = neighbours[j]; j++) {
       // If both connections are connected, that's probably fine.  But if
       // either one of them is unconnected, then there could be confusion.
       if (!connection.targetConnection || !otherConnection.targetConnection) {
@@ -1220,11 +414,6 @@ Blockly.Block.prototype.setParent = function(newParent, replacement) {
         break;
       }
     }
-    // Move this block up the DOM.  Keep track of x/y translations.
-    var xy = this.getRelativeToSurfaceXY();
-    this.workspace.getCanvas().appendChild(this.svg_.getRootElement());
-    this.svg_.getRootElement().setAttribute('transform',
-        'translate(' + xy.x + ', ' + xy.y + ')');
 
     // Disconnect from superior blocks.
     this.parentBlock_ = null;
@@ -1249,14 +438,6 @@ Blockly.Block.prototype.setParent = function(newParent, replacement) {
   if (newParent) {
     // Add this block to the new parent's child list.
     newParent.childBlocks_.push(this);
-
-    var oldXY = this.getRelativeToSurfaceXY();
-    if (newParent.svg_ && this.svg_) {
-      newParent.svg_.getRootElement().appendChild(this.svg_.getRootElement());
-    }
-    var newXY = this.getRelativeToSurfaceXY();
-    // Move the connections to match the child's new position.
-    this.moveConnections_(newXY.x - oldXY.x, newXY.y - oldXY.y);
   } else {
     this.workspace.addTopBlock(this);
   }
@@ -1282,7 +463,8 @@ Blockly.Block.prototype.getDescendants = function() {
  * @return {boolean} True if deletable.
  */
 Blockly.Block.prototype.isDeletable = function() {
-  return this.deletable_ && !Blockly.readOnly;
+  return this.deletable_ &&
+      !(this.workspace && this.workspace.options.readOnly);
 };
 
 /**
@@ -1291,7 +473,6 @@ Blockly.Block.prototype.isDeletable = function() {
  */
 Blockly.Block.prototype.setDeletable = function(deletable) {
   this.deletable_ = deletable;
-  this.svg_ && this.svg_.updateMovable();
 };
 
 /**
@@ -1299,7 +480,7 @@ Blockly.Block.prototype.setDeletable = function(deletable) {
  * @return {boolean} True if movable.
  */
 Blockly.Block.prototype.isMovable = function() {
-  return this.movable_ && !Blockly.readOnly;
+  return this.movable_ && !(this.workspace && this.workspace.options.readOnly);
 };
 
 /**
@@ -1315,7 +496,7 @@ Blockly.Block.prototype.setMovable = function(movable) {
  * @return {boolean} True if editable.
  */
 Blockly.Block.prototype.isEditable = function() {
-  return this.editable_ && !Blockly.readOnly;
+  return this.editable_ && !(this.workspace && this.workspace.options.readOnly);
 };
 
 /**
@@ -1324,14 +505,50 @@ Blockly.Block.prototype.isEditable = function() {
  */
 Blockly.Block.prototype.setEditable = function(editable) {
   this.editable_ = editable;
-  for (var x = 0, input; input = this.inputList[x]; x++) {
-    for (var y = 0, field; field = input.fieldRow[y]; y++) {
+  for (var i = 0, input; input = this.inputList[i]; i++) {
+    for (var j = 0, field; field = input.fieldRow[j]; j++) {
       field.updateEditable();
     }
   }
-  var icons = this.getIcons();
-  for (var x = 0; x < icons.length; x++) {
-    icons[x].updateEditable();
+  if (this.rendered) {
+    var icons = this.getIcons();
+    for (var i = 0; i < icons.length; i++) {
+      icons[i].updateEditable();
+    }
+  }
+};
+
+/**
+ * Set whether the connections are hidden (not tracked in a database) or not.
+ * Recursively walk down all child blocks (except collapsed blocks).
+ * @param {boolean} hidden True if connections are hidden.
+ */
+Blockly.Block.prototype.setConnectionsHidden = function(hidden) {
+  if (!hidden && this.isCollapsed()) {
+    if (this.outputConnection) {
+      this.outputConnection.setHidden(hidden);
+    }
+    if (this.previousConnection) {
+      this.previousConnection.setHidden(hidden);
+    }
+    if (this.nextConnection) {
+      this.nextConnection.setHidden(hidden);
+      var child = this.nextConnection.targetBlock();
+      if (child) {
+        child.setConnectionsHidden(hidden);
+      }
+    }
+  } else {
+    var myConnections = this.getConnections_(true);
+    for (var i = 0, connection; connection = myConnections[i]; i++) {
+      connection.setHidden(hidden);
+      if (connection.isSuperior()) {
+        var child = connection.targetBlock();
+        if (child) {
+          child.setConnectionsHidden(hidden);
+        }
+      }
+    }
   }
 };
 
@@ -1342,6 +559,15 @@ Blockly.Block.prototype.setEditable = function(editable) {
  */
 Blockly.Block.prototype.setHelpUrl = function(url) {
   this.helpUrl = url;
+};
+
+/**
+ * Change the tooltip text for a block.
+ * @param {string|!Function} newTip Text for tooltip or a parent element to
+ *     link to for its tooltip.  May be a function that returns a string.
+ */
+Blockly.Block.prototype.setTooltip = function(newTip) {
+  this.tooltip = newTip;
 };
 
 /**
@@ -1366,13 +592,7 @@ Blockly.Block.prototype.setFullColor = function(color) {
     icons[x].updateColour();
   }
   if (this.rendered) {
-    // Bump every dropdown to change its colour.
-    for (var x = 0, input; input = this.inputList[x]; x++) {
-      for (var y = 0, field; field = input.fieldRow[y]; y++) {
-        field.setText(null);
-      }
-    }
-    this.render();
+    this.updateColour();
   }
 };
 
@@ -1400,8 +620,8 @@ Blockly.Block.prototype.setColour = function(colourHue) {
  * @private
  */
 Blockly.Block.prototype.getField_ = function(name) {
-  for (var x = 0, input; input = this.inputList[x]; x++) {
-    for (var y = 0, field; field = input.fieldRow[y]; y++) {
+  for (var i = 0, input; input = this.inputList[i]; i++) {
+    for (var j = 0, field; field = input.fieldRow[j]; j++) {
       if (field.name === name) {
         return field;
       }
@@ -1430,7 +650,7 @@ Blockly.Block.prototype.getFieldValue = function(name) {
  * @deprecated December 2013
  */
 Blockly.Block.prototype.getTitleValue = function(name) {
-  console.log('Deprecated call to getTitleValue, use getFieldValue instead.');
+  console.warn('Deprecated call to getTitleValue, use getFieldValue instead.');
   return this.getFieldValue(name);
 };
 
@@ -1452,17 +672,8 @@ Blockly.Block.prototype.setFieldValue = function(newValue, name) {
  * @deprecated December 2013
  */
 Blockly.Block.prototype.setTitleValue = function(newValue, name) {
-  console.log('Deprecated call to setTitleValue, use setFieldValue instead.');
+  console.warn('Deprecated call to setTitleValue, use setFieldValue instead.');
   this.setFieldValue(newValue, name);
-};
-
-/**
- * Change the tooltip text for a block.
- * @param {string|!Function} newTip Text for tooltip or a parent element to
- *     link to for its tooltip.  May be a function that returns a string.
- */
-Blockly.Block.prototype.setTooltip = function(newTip) {
-  this.tooltip = newTip;
 };
 
 /**
@@ -1579,6 +790,33 @@ Blockly.Block.prototype.setInputsInline = function(newBoolean) {
 };
 
 /**
+ * Get whether value inputs are arranged horizontally or vertically.
+ * @return {boolean} True if inputs are horizontal.
+ */
+Blockly.Block.prototype.getInputsInline = function() {
+  if (this.inputsInline != undefined) {
+    // Set explicitly.
+    return this.inputsInline;
+  }
+  // Not defined explicitly.  Figure out what would look best.
+  for (var i = 1; i < this.inputList.length; i++) {
+    if (this.inputList[i - 1].type == Blockly.DUMMY_INPUT &&
+        this.inputList[i].type == Blockly.DUMMY_INPUT) {
+      // Two dummy inputs in a row.  Don't inline them.
+      return false;
+    }
+  }
+  for (var i = 1; i < this.inputList.length; i++) {
+    if (this.inputList[i - 1].type == Blockly.INPUT_VALUE &&
+        this.inputList[i].type == Blockly.DUMMY_INPUT) {
+      // Dummy input after a value input.  Inline them.
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
  * Set whether the block is disabled or not.
  * @param {boolean} disabled True if disabled.
  */
@@ -1587,8 +825,6 @@ Blockly.Block.prototype.setDisabled = function(disabled) {
     return;
   }
   this.disabled = disabled;
-  this.svg_.updateDisabled();
-  this.workspace.fireChangeEvent();
 };
 
 /**
@@ -1622,38 +858,7 @@ Blockly.Block.prototype.isCollapsed = function() {
  * @param {boolean} collapsed True if collapsed.
  */
 Blockly.Block.prototype.setCollapsed = function(collapsed) {
-  if (this.collapsed_ == collapsed) {
-    return;
-  }
   this.collapsed_ = collapsed;
-  var renderList = [];
-  // Show/hide the inputs.
-  for (var x = 0, input; input = this.inputList[x]; x++) {
-    renderList.push.apply(renderList, input.setVisible(!collapsed));
-  }
-
-  var COLLAPSED_INPUT_NAME = '_TEMP_COLLAPSED_INPUT';
-  if (collapsed) {
-    var icons = this.getIcons();
-    for (var x = 0; x < icons.length; x++) {
-      icons[x].setVisible(false);
-    }
-    var text = this.toString(Blockly.COLLAPSE_CHARS);
-    this.appendDummyInput(COLLAPSED_INPUT_NAME).appendField(text);
-  } else {
-    this.removeInput(COLLAPSED_INPUT_NAME);
-  }
-
-  if (!renderList.length) {
-    // No child blocks, just render this block.
-    renderList[0] = this;
-  }
-  if (this.rendered) {
-    for (var x = 0, block; block = renderList[x]; x++) {
-      block.render();
-    }
-    this.bumpNeighbours_();
-  }
 };
 
 /**
@@ -1663,16 +868,20 @@ Blockly.Block.prototype.setCollapsed = function(collapsed) {
  */
 Blockly.Block.prototype.toString = function(opt_maxLength) {
   var text = [];
-  for (var x = 0, input; input = this.inputList[x]; x++) {
-    for (var y = 0, field; field = input.fieldRow[y]; y++) {
-      text.push(field.getText());
-    }
-    if (input.connection) {
-      var child = input.connection.targetBlock();
-      if (child) {
-        text.push(child.toString());
-      } else {
-        text.push('?');
+  if (this.collapsed_) {
+    text.push(this.getInput('_TEMP_COLLAPSED_INPUT').fieldRow[0].text_);
+  } else {
+    for (var i = 0, input; input = this.inputList[i]; i++) {
+      for (var j = 0, field; field = input.fieldRow[j]; j++) {
+        text.push(field.getText());
+      }
+      if (input.connection) {
+        var child = input.connection.targetBlock();
+        if (child) {
+          text.push(child.toString());
+        } else {
+          text.push('?');
+        }
       }
     }
   }
@@ -1716,118 +925,145 @@ Blockly.Block.prototype.appendDummyInput = function(opt_name) {
 };
 
 /**
- * Interpolate a message string, creating fields and inputs.
- * @param {string} msg The message string to parse.  %1, %2, etc. are symbols
- *     for value inputs or for Fields, such as an instance of
- *     Blockly.FieldDropdown, which would be placed as a field in either the
- *     following value input or a dummy input.  The newline character forces
- *     the creation of an unnamed dummy input if any fields need placement.
- *     Note that '%10' would be interpreted as a reference to the tenth
- *     argument.  To show the first argument followed by a zero, use '%1 0'.
- *     (Spaces around tokens are stripped.)  To display a percentage sign
- *     followed by a number (e.g., "%123"), put that text in a
- *     Blockly.FieldLabel (as described below).
- * @param {!Array.<?string|number|Array.<string>|Blockly.Field>|number} var_args
- *     A series of tuples that each specify the value inputs to create.  Each
- *     tuple has at least two elements.  The first is its name; the second is
- *     its type, which can be any of:
- *     - A string (such as 'Number'), denoting the one type allowed in the
- *       corresponding socket.
- *     - An array of strings (such as ['Number', 'List']), denoting the
- *       different types allowed in the corresponding socket.
- *     - null, denoting that any type is allowed in the corresponding socket.
- *     - Blockly.Field, in which case that field instance, such as an
- *       instance of Blockly.FieldDropdown, appears (instead of a socket).
- *     If the type is any of the first three options (which are legal arguments
- *     to setCheck()), there should be a third element in the tuple, giving its
- *     alignment.
- *     The final parameter is not a tuple, but just an alignment for any
- *     trailing dummy inputs.  This last parameter is mandatory; there may be
- *     any number of tuples (though the number of tuples must match the symbols
- *     in msg).
+ * Initialize this block using a cross-platform, internationalization-friendly
+ * JSON description.
+ * @param {!Object} json Structured data describing the block.
  */
-Blockly.Block.prototype.interpolateMsg = function(msg, var_args) {
-  /**
-   * Add a field to this input.
-   * @this !Blockly.Input
-   * @param {Blockly.Field|Array.<string|Blockly.Field>} field
-   *     This is either a Field or a tuple of a name and a Field.
-   */
-  function addFieldToInput(field) {
-    if (field instanceof Blockly.Field) {
-      this.appendField(field);
+Blockly.Block.prototype.jsonInit = function(json) {
+  // Validate inputs.
+  goog.asserts.assertString(json['message'], 'No message.');
+  goog.asserts.assertArray(json['args'], 'No args.');
+  goog.asserts.assert(json['output'] == undefined ||
+      json['previousStatement'] == undefined,
+      'Must not have both an output and a previousStatement.');
+
+  // Set basic properties of block.
+  this.setFullColour(json['colour']);
+
+  // Parse the message and interpolate the arguments.
+  // Build a list of elements.
+  var tokens = json['message'].split(/(%\d+)/);
+  var indexDup = [];
+  var indexCount = 0;
+  var elements = [];
+  for (var i = 0; i < tokens.length; i++) {
+    var token = tokens[i];
+    if (token.match(/^%\d+$/)) {
+      var index = parseInt(token.substring(1), 10);
+      goog.asserts.assert(index > 0 && index <= json['args'].length,
+          'Message index "%s" out of range.', token);
+      goog.asserts.assert(!indexDup[index],
+          'Message index "%s" duplicated.', token);
+      indexDup[index] = true;
+      indexCount++;
+      elements.push(json['args'][index - 1]);
     } else {
-      goog.asserts.assert(goog.isArray(field));
-      this.appendField(field[1], field[0]);
-    }
-  }
-
-  // Validate the msg at the start and the dummy alignment at the end,
-  // and remove the latter.
-  goog.asserts.assertString(msg);
-  var dummyAlign = arguments[arguments.length - 1];
-  goog.asserts.assert(
-      dummyAlign === Blockly.ALIGN_LEFT ||
-      dummyAlign === Blockly.ALIGN_CENTRE ||
-      dummyAlign === Blockly.ALIGN_RIGHT,
-      'Illegal final argument "%d" is not an alignment.', dummyAlign);
-  arguments.length = arguments.length - 1;
-
-  var tokens = msg.split(this.interpolateMsg.SPLIT_REGEX_);
-  var fields = [];
-  for (var i = 0; i < tokens.length; i += 2) {
-    var text = goog.string.trim(tokens[i]);
-    var input = undefined;
-    if (text) {
-      fields.push(new Blockly.FieldLabel(text));
-    }
-    var symbol = tokens[i + 1];
-    if (symbol && symbol.charAt(0) == '%') {
-      // Numeric field.
-      var number = parseInt(symbol.substring(1), 10);
-      var tuple = arguments[number];
-      goog.asserts.assertArray(tuple,
-          'Message symbol "%s" is out of range.', symbol);
-      goog.asserts.assertArray(tuple,
-          'Argument "%s" is not a tuple.', symbol);
-      if (tuple[1] instanceof Blockly.Field) {
-        fields.push([tuple[0], tuple[1]]);
-      } else {
-        input = this.appendValueInput(tuple[0])
-            .setCheck(tuple[1])
-            .setAlign(tuple[2]);
+      token = token.replace(/%%/g, '%').trim();
+      if (token) {
+        elements.push(token);
       }
-      arguments[number] = null;  // Inputs may not be reused.
-    } else if (symbol == '\n' && fields.length) {
-      // Create a dummy input.
-      input = this.appendDummyInput();
-    }
-    // If we just added an input, hang any pending fields on it.
-    if (input && fields.length) {
-      fields.forEach(addFieldToInput, input);
-      fields = [];
     }
   }
-  // If any fields remain, create a trailing dummy input.
-  if (fields.length) {
-    var input = this.appendDummyInput()
-        .setAlign(dummyAlign);
-    fields.forEach(addFieldToInput, input);
+  goog.asserts.assert(indexCount == json['args'].length,
+      'Message does not reference all %s arg(s).', json['args'].length);
+  // Add last dummy input if needed.
+  if (elements.length && (typeof elements[elements.length - 1] == 'string' ||
+      elements[elements.length - 1]['type'].indexOf('field_') == 0)) {
+    var input = {type: 'input_dummy'};
+    if (json['lastDummyAlign']) {
+      input['align'] = json['lastDummyAlign'];
+    }
+    elements.push(input);
+  }
+  // Lookup of alignment constants.
+  var alignmentLookup = {
+    'LEFT': Blockly.ALIGN_LEFT,
+    'RIGHT': Blockly.ALIGN_RIGHT,
+    'CENTRE': Blockly.ALIGN_CENTRE
+  };
+  // Populate block with inputs and fields.
+  var fieldStack = [];
+  for (var i = 0; i < elements.length; i++) {
+    var element = elements[i];
+    if (typeof element == 'string') {
+      fieldStack.push([element, undefined]);
+    } else {
+      var field = null;
+      var input = null;
+      switch (element['type']) {
+        case 'field_label':
+          field = new Blockly.FieldLabel(element['text']);
+          break;
+        case 'field_input':
+          field = new Blockly.FieldTextInput(element['text']);
+          break;
+        case 'field_angle':
+          field = new Blockly.FieldAngle(element['angle']);
+          break;
+        case 'field_checkbox':
+          field = new Blockly.FieldCheckbox(element['checked']);
+          break;
+        case 'field_colour':
+          field = new Blockly.FieldColour(element['colour']);
+          break;
+        case 'field_date':
+          field = new Blockly.FieldDate(element['date']);
+          break;
+        case 'field_variable':
+          field = new Blockly.FieldVariable(element['variable']);
+          break;
+        case 'field_dropdown':
+          field = new Blockly.FieldDropdown(element['options']);
+          break;
+        case 'field_image':
+          field = new Blockly.FieldImage(element['src'],
+              element['width'], element['height'], element['alt']);
+          break;
+        case 'input_value':
+          input = this.appendValueInput(element['name']);
+          break;
+        case 'input_statement':
+          input = this.appendStatementInput(element['name']);
+          break;
+        case 'input_dummy':
+          input = this.appendDummyInput(element['name']);
+          break;
+        default:
+          throw 'Unknown element type: ' + element['type'];
+      }
+      if (field) {
+        fieldStack.push([field, element['name']]);
+      } else if (input) {
+        if (element['check']) {
+          input.setCheck(element['check']);
+        }
+        if (element['align']) {
+          input.setAlign(alignmentLookup[element['align']]);
+        }
+        for (var j = 0; j < fieldStack.length; j++) {
+          input.appendField(fieldStack[j][0], fieldStack[j][1]);
+        }
+        fieldStack.length = 0;
+      }
+    }
   }
 
-  // Verify that all inputs were used.
-  for (var i = 1; i < arguments.length - 1; i++) {
-    goog.asserts.assert(arguments[i] === null,
-        'Input "%%s" not used in message: "%s"', i, msg);
+  if (json['inputsInline'] !== undefined) {
+    this.setInputsInline(json['inputsInline']);
   }
-  // Make the inputs inline unless there is only one input and
-  // no text follows it.
-  this.setInputsInline(!msg.match(this.interpolateMsg.INLINE_REGEX_));
+  // Set output and previous/next connections.
+  if (json['output'] !== undefined) {
+    this.setOutput(true, json['output']);
+  }
+  if (json['previousStatement'] !== undefined) {
+    this.setPreviousStatement(true, json['previousStatement']);
+  }
+  if (json['nextStatement'] !== undefined) {
+    this.setNextStatement(true, json['nextStatement']);
+  }
+  this.setTooltip(json['tooltip']);
+  this.setHelpUrl(json['helpUrl']);
 };
-
-Blockly.Block.prototype.interpolateMsg.SPLIT_REGEX_ = /(%\d+|\n)/;
-Blockly.Block.prototype.interpolateMsg.INLINE_REGEX_ = /%1\s*$/;
-
 
 /**
  * Add a value input, statement input or local variable to this block.
@@ -1867,14 +1103,14 @@ Blockly.Block.prototype.moveInputBefore = function(name, refName) {
   // Find both inputs.
   var inputIndex = -1;
   var refIndex = refName ? -1 : this.inputList.length;
-  for (var x = 0, input; input = this.inputList[x]; x++) {
+  for (var i = 0, input; input = this.inputList[i]; i++) {
     if (input.name == name) {
-      inputIndex = x;
+      inputIndex = i;
       if (refIndex != -1) {
         break;
       }
     } else if (refName && input.name == refName) {
-      refIndex = x;
+      refIndex = i;
       if (inputIndex != -1) {
         break;
       }
@@ -1922,14 +1158,14 @@ Blockly.Block.prototype.moveNumberedInputBefore = function(
  *     opt_quiet is not true.
  */
 Blockly.Block.prototype.removeInput = function(name, opt_quiet) {
-  for (var x = 0, input; input = this.inputList[x]; x++) {
+  for (var i = 0, input; input = this.inputList[i]; i++) {
     if (input.name == name) {
       if (input.connection && input.connection.targetConnection) {
         // Disconnect any attached block.
         input.connection.targetBlock().setParent(null);
       }
       input.dispose();
-      this.inputList.splice(x, 1);
+      this.inputList.splice(i, 1);
       if (this.rendered) {
         this.render();
         // Removing an input will cause the block to change shape.
@@ -1949,7 +1185,7 @@ Blockly.Block.prototype.removeInput = function(name, opt_quiet) {
  * @return {Object} The input object, or null of the input does not exist.
  */
 Blockly.Block.prototype.getInput = function(name) {
-  for (var x = 0, input; input = this.inputList[x]; x++) {
+  for (var i = 0, input; input = this.inputList[i]; i++) {
     if (input.name == name) {
       return input;
     }
@@ -1970,33 +1206,11 @@ Blockly.Block.prototype.getInputTargetBlock = function(name) {
 };
 
 /**
- * Give this block a mutator dialog.
- * @param {Blockly.Mutator} mutator A mutator dialog instance or null to remove.
- */
-Blockly.Block.prototype.setMutator = function(mutator) {
-  if (this.mutator && this.mutator !== mutator) {
-    this.mutator.dispose();
-  }
-  if (mutator) {
-    mutator.block_ = this;
-    this.mutator = mutator;
-    if (this.svg_) {
-      mutator.createIcon();
-    }
-  }
-};
-
-/**
  * Returns the comment on this block (or '' if none).
  * @return {string} Block's comment.
  */
 Blockly.Block.prototype.getCommentText = function() {
-  if (this.comment) {
-    var comment = this.comment.getText();
-    // Trim off trailing whitespace.
-    return comment.replace(/\s+$/, '').replace(/ +\n/g, '\n');
-  }
-  return '';
+  return this.comment || '';
 };
 
 /**
@@ -2004,26 +1218,7 @@ Blockly.Block.prototype.getCommentText = function() {
  * @param {?string} text The text, or null to delete.
  */
 Blockly.Block.prototype.setCommentText = function(text) {
-  var changedState = false;
-  if (goog.isString(text)) {
-    if (!this.comment) {
-      this.comment = new Blockly.Comment(this);
-      changedState = true;
-    }
-    this.comment.setText(/** @type {string} */ (text));
-  } else {
-    if (this.comment) {
-      this.comment.dispose();
-      changedState = true;
-    }
-  }
-  if (this.rendered) {
-    this.render();
-    if (changedState) {
-      // Adding or removing a comment icon will cause the block to change shape.
-      this.bumpNeighbours_();
-    }
-  }
+  this.comment = text;
 };
 
 /**
@@ -2031,38 +1226,33 @@ Blockly.Block.prototype.setCommentText = function(text) {
  * @param {?string} text The text, or null to delete.
  */
 Blockly.Block.prototype.setWarningText = function(text) {
-  if (this.isInFlyout) {
-    text = null;
-  }
-  var changedState = false;
-  if (goog.isString(text)) {
-    if (!this.warning) {
-      this.warning = new Blockly.Warning(this);
-      changedState = true;
-    }
-    this.warning.setText(/** @type {string} */ (text));
-  } else {
-    if (this.warning) {
-      this.warning.dispose();
-      changedState = true;
-    }
-  }
-  if (changedState && this.rendered) {
-    this.render();
-    // Adding or removing a warning icon will cause the block to change shape.
-    this.bumpNeighbours_();
-  }
+  // NOP.
 };
 
 /**
- * Render the block.
- * Lays out and reflows a block based on its contents and settings.
+ * Give this block a mutator dialog.
+ * @param {Blockly.Mutator} mutator A mutator dialog instance or null to remove.
  */
-Blockly.Block.prototype.render = function() {
-  goog.asserts.assertObject(this.svg_,
-      'Uninitialized block cannot be rendered.  Call block.initSvg()');
-  this.svg_.render();
-  Blockly.Realtime.blockChanged(this);
+Blockly.Block.prototype.setMutator = function(mutator) {
+  // NOP.
+};
+
+/**
+ * Return the coordinates of the top-left corner of this block relative to the
+ * drawing surface's origin (0,0).
+ * @return {!goog.math.Coordinate} Object with .x and .y properties.
+ */
+Blockly.Block.prototype.getRelativeToSurfaceXY = function() {
+  return this.xy_;
+};
+
+/**
+ * Move a block by a relative offset.
+ * @param {number} dx Horizontal offset.
+ * @param {number} dy Vertical offset.
+ */
+Blockly.Block.prototype.moveBy = function(dx, dy) {
+  this.xy_.translate(dx, dy);
 };
 
 /**

@@ -35,7 +35,12 @@
 #   dart_compressed.js: The compressed Dart generator.
 #   msg/js/<LANG>.js for every language <LANG> defined in msg/js/<LANG>.json.
 
-import errno, glob, httplib, json, os, re, subprocess, sys, threading, urllib
+import sys
+if sys.version_info[0] != 2:
+  raise Exception("Blockly build only compatible with Python 2.x.\n"
+                  "You are using: " + sys.version)
+
+import errno, glob, httplib, json, os, re, subprocess, threading, urllib
 
 
 def import_path(fullpath):
@@ -74,7 +79,8 @@ class Gen_uncompressed(threading.Thread):
     f = open(target_filename, 'w')
     f.write(HEADER)
     f.write("""
-window.BLOCKLY_DIR = (function() {
+// 'this' is 'window' in a browser, or 'global' in node.js.
+this.BLOCKLY_DIR = (function() {
   // Find name of current directory.
   var scripts = document.getElementsByTagName('script');
   var re = new RegExp('(.+)[\/]blockly_uncompressed\.js$');
@@ -88,15 +94,15 @@ window.BLOCKLY_DIR = (function() {
   return '';
 })();
 
-window.BLOCKLY_BOOT = function() {
+this.BLOCKLY_BOOT = function() {
 // Execute after Closure has loaded.
-if (!window.goog) {
+if (!this.goog) {
   alert('Error: Closure not found.  Read this:\\n' +
         'developers.google.com/blockly/hacking/closure');
 }
 
 // Build map of all dependencies (used and unused).
-var dir = window.BLOCKLY_DIR.match(/[^\\/]+$/)[0];
+var dir = this.BLOCKLY_DIR.match(/[^\\/]+$/)[0];
 """)
     add_dependency = []
     base_path = calcdeps.FindClosureBasePath(self.search_paths)
@@ -122,16 +128,21 @@ var dir = window.BLOCKLY_DIR.match(/[^\\/]+$/)[0];
       f.write('goog.require(\'%s\');\n' % provide)
 
     f.write("""
-delete window.BLOCKLY_DIR;
-delete window.BLOCKLY_BOOT;
+delete this.BLOCKLY_DIR;
+delete this.BLOCKLY_BOOT;
 };
+
+if (typeof DOMParser == 'undefined' && typeof require == 'function') {
+  // Node.js needs DOMParser loaded separately.
+  var DOMParser = require('xmldom').DOMParser;
+}
 
 // Delete any existing Closure (e.g. Soy's nogoog_shim).
 document.write('<script>var goog = undefined;</script>');
 // Load fresh Closure Library.
-document.write('<script src="' + window.BLOCKLY_DIR +
+document.write('<script src="' + this.BLOCKLY_DIR +
     '/../closure-library/closure/goog/base.js"></script>');
-document.write('<script>window.BLOCKLY_BOOT()</script>');
+document.write('<script>this.BLOCKLY_BOOT()</script>');
 """)
     f.close()
     print('SUCCESS: ' + target_filename)
@@ -152,6 +163,7 @@ class Gen_compressed(threading.Thread):
     self.gen_blocks()
     self.gen_generator('javascript')
     self.gen_generator('python')
+    self.gen_generator('php')
     self.gen_generator('dart')
 
   def gen_core(self):
@@ -248,7 +260,7 @@ class Gen_compressed(threading.Thread):
     def file_lookup(name):
       if not name.startswith('Input_'):
         return '???'
-      n = int(name[6:])
+      n = int(name[6:]) - 1
       return filenames[n]
 
     if json_data.has_key('serverErrors'):
@@ -407,7 +419,7 @@ class Gen_langfiles(threading.Thread):
 if __name__ == '__main__':
   try:
     calcdeps = import_path(os.path.join(os.path.pardir,
-          'closure-library', 'closure', 'bin', 'calcdeps.py'))
+        'closure-library', 'closure', 'bin', 'calcdeps.py'))
   except ImportError:
     if os.path.isdir(os.path.join(os.path.pardir, 'closure-library-read-only')):
       # Dir got renamed when Closure moved from Google Code to GitHub in 2014.
