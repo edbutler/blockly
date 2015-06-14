@@ -476,7 +476,7 @@ Blockly.BlockSvg.prototype.onMouseUp_ = function(e) {
         current = current.getSurroundParent();
       }
       blocksToRevert.forEach(function (b) {
-        b.svg_.revertContainer();
+        b.revertContainer();
       });
       $('.placeholder').remove();
 
@@ -813,7 +813,7 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
             current = current.getSurroundParent();
           }
           blocksToRevert.forEach(function (b) {
-            b.svg_.revertContainer();
+            b.revertContainer();
           });
         }
 
@@ -858,7 +858,7 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
           var target = Blockly.highlightedConnection_.targetBlock();
           outline.attr('transform', "translate(0," + (-this_.getHeightWidth().height) + ")"); // position outline
           target.shiftBy(0, this_.getHeightWidth().height); // shift existing blocks
-          $(target.svg_.getRootElement()).append(outline); // add outline to svg
+          $(target.getSvgRoot()).append(outline); // add outline to svg
           searchStartBlock = target;
         } else { // otherwise we case on the nature of the connection
           if (expanding) {
@@ -868,21 +868,21 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
             // connections aren't moved when block is dragged, so we add in the block position delta (dx,dy), computed above
             outline.attr('transform', "translate(" + (-(input.connection.x_ + dx) + xy.x + sourceDx) + "," + (-(input.connection.y_ + dy) + xy.y) + ")"); // position outline
             // no need to shift existing blocks
-            $(source.svg_.getRootElement()).append(outline); // add outline to svg
+            $(source.getSvgRoot()).append(outline); // add outline to svg
             // no search for containing blocks needed
           }
           // next connection
           if (Blockly.highlightedConnection_ === source.nextConnection) {
             outline.attr('transform', "translate(0," + (source.getHeightWidth().height) + ")"); // position outline
             // no need to shift existing blocks
-            $(source.svg_.getRootElement()).append(outline); // add outline to svg
+            $(source.getSvgRoot()).append(outline); // add outline to svg
             searchStartBlock = source;
           }
           // previous connection
           if (Blockly.highlightedConnection_ === source.previousConnection && !expanding) {
             outline.attr('transform', "translate(0," + (-this_.getHeightWidth().height) + ")"); // position outline
             // no need to shift existing blocks
-            $(source.svg_.getRootElement()).append(outline); // add outline to svg
+            $(source.getSvgRoot()).append(outline); // add outline to svg
             // no search for containing blocks needed
           }
           // nested statement connection
@@ -893,7 +893,7 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
             var thisDx = this_.previousConnection.x_ + dx - this_.getRelativeToSurfaceXY().x;
             outline.attr('transform', "translate(" + ((sourceInput.connection.x_ - xy.x) - thisDx) + "," + (sourceInput.connection.y_ - xy.y) + ")"); // position outline
             // no need to shift existing blocks
-            $(source.svg_.getRootElement()).append(outline); // add outline to svg
+            $(source.getSvgRoot()).append(outline); // add outline to svg
             searchStartBlock = source;
             // we should include the source in the containing blocks to expand
             blocksToExpand.push(source);
@@ -908,7 +908,7 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
             current = current.getSurroundParent();
           }
           blocksToExpand.forEach(function (b) {
-            b.svg_.resizeContainer(this_.getHeightWidth().height);
+            b.resizeContainer(this_.getHeightWidth().height);
           });
         }
       }
@@ -1171,14 +1171,14 @@ Blockly.BlockSvg.prototype.dispose = function(healStack, animate,
   if (Blockly.ContextMenu.currentBlock == this) {
     Blockly.ContextMenu.hide();
   }
+  // Stop rerendering.
+  this.rendered = false;
   // Bring block to the top of the workspace.
   this.unplug(healStack, false);
 
   if (animate && this.rendered) {
     this.disposeUiEffect();
   }
-  // Stop rerendering.
-  this.rendered = false;
 
   var icons = this.getIcons();
   for (var x = 0; x < icons.length; x++) {
@@ -1295,10 +1295,10 @@ Blockly.BlockSvg.prototype.updateColour = function() {
     return;
   }
 
-  var hexColour = this.block_.getFullColor();
-  if (this.block_.frozen) {
+  var hexColour = this.getFullColor();
+  if (this.frozen) {
     // assumes the first field of the first inputList element will be the label of the block, so we check the second field
-    if (this.block_.editable_ && this.block_.inputList[0].fieldRow[1] instanceof Blockly.FieldTextInput) {
+    if (this.editable_ && this.inputList[0].fieldRow[1] instanceof Blockly.FieldTextInput) {
       // assumes an alarming amount about structure of the svg:
       // -- since blockly builds the svg as nested groups, the selection returns a list of all the text boxes
       //    we assume the first element will be the closest text box (and therefore the one we want)
@@ -1308,7 +1308,7 @@ Blockly.BlockSvg.prototype.updateColour = function() {
       textBoxRect.style.fillOpacity = 1.0;
     }
     // if this is an inline input, we should check the first field
-    else if (this.block_.editable_ && this.block_.inputList[0].fieldRow[0] instanceof Blockly.FieldTextInput) {
+    else if (this.editable_ && this.inputList[0].fieldRow[0] instanceof Blockly.FieldTextInput) {
       // assumes an alarming amount about structure of the svg:
       // -- since blockly builds the svg as nested groups, the selection returns a list of all the text boxes
       //    we assume the first element will be the closest text box (and therefore the one we want)
@@ -2236,11 +2236,11 @@ Blockly.BlockSvg.prototype.resizeContainer = function(dy) {
     return;
   }
   // add class
-  var rootSvg = $(this.getRootElement());
+  var rootSvg = $(this.getSvgRoot());
   rootSvg.attr('class', rootSvg.attr('class') + " tempExpanded");
   // shift down successor blocks
-  if (this.block_.nextConnection && this.block_.nextConnection.targetBlock()) {
-    this.block_.nextConnection.targetBlock().shiftBy(0, dy);
+  if (this.nextConnection && this.nextConnection.targetBlock()) {
+    this.nextConnection.targetBlock().shiftBy(0, dy);
   }
   // resize main path
   this.renderSteps[this.renderHeightIndex] = dy + this.renderBaseHeight;
@@ -2258,11 +2258,11 @@ Blockly.BlockSvg.prototype.revertContainer = function() {
     return;
   }
   // remove class
-  var rootSvg = $(this.getRootElement());
+  var rootSvg = $(this.getSvgRoot());
   rootSvg.attr('class', rootSvg.attr('class').replace(" tempExpanded", ""));
   // shift up successor blocks
-  if (this.block_.nextConnection && this.block_.nextConnection.targetBlock()) {
-    this.block_.nextConnection.targetBlock().shiftBy(0, this.renderBaseHeight - this.renderSteps[this.renderHeightIndex]);
+  if (this.nextConnection && this.nextConnection.targetBlock()) {
+    this.nextConnection.targetBlock().shiftBy(0, this.renderBaseHeight - this.renderSteps[this.renderHeightIndex]);
   }
   // revert main path
   this.renderSteps[this.renderHeightIndex] = this.renderBaseHeight;
@@ -2275,9 +2275,9 @@ Blockly.BlockSvg.prototype.revertContainer = function() {
   this.svgPathLight_.setAttribute('d', this.renderStepsLight.join(' '));
 }
 
-Blockly.Block.prototype.getNextStatementInput = function() {
-  if (this.block_.inputList) {
-    var inputs = this.block_.inputList.filter(function (input) { return input.type === Blockly.NEXT_STATEMENT; });
+Blockly.BlockSvg.prototype.getNextStatementInput = function() {
+  if (this.inputList) {
+    var inputs = this.inputList.filter(function (input) { return input.type === Blockly.NEXT_STATEMENT; });
     if (inputs.length > 1) { throw new Error("There should only be one NEXT_STATEMENT input"); } 
     return inputs[0];
   }

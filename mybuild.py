@@ -27,7 +27,7 @@ def build_blockly():
         'Blockly.Blocks.loops',
         'Blockly.Blocks.math',
         'Blockly.Blocks.procedures',
-        'Blockly.Blocks.text',
+        'Blockly.Blocks.texts',
         'Blockly.Blocks.variables'
     ]
 

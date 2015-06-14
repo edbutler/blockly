@@ -253,9 +253,9 @@ Blockly.Block.prototype.unplug = function(healStack, bump) {
  * @param {number} dy Vertical offset.
  */
 Blockly.Block.prototype.shiftBy = function(dx, dy) {
-  var root = this.svg_.getRootElement();
+  var root = this.getSvgRoot();
   var xy = Blockly.getRelativeXY_(root);
-  this.svg_.getRootElement().setAttribute('transform',
+  this.getSvgRoot().setAttribute('transform',
       'translate(' + (xy.x + dx) + ', ' + (xy.y + dy) + ')');
 }
 
@@ -291,6 +291,36 @@ Blockly.Block.prototype.duplicateParam = function() {
       /** @type {!Blockly.Workspace} */ (this.workspace), xmlBlock);
   newBlock.isDefault = true;
   return newBlock;
+};
+
+/**
+ * Returns all connections originating from this block.
+ * @param {boolean} all If true, return all connections even hidden ones.
+ *     Otherwise return those that are visible.
+ * @return {!Array.<!Blockly.Connection>} Array of connections.
+ * @private
+ */
+Blockly.Block.prototype.getConnections_ = function(all) {
+  var myConnections = [];
+  if (all || this.rendered) {
+    if (this.outputConnection) {
+      myConnections.push(this.outputConnection);
+    }
+    if (this.previousConnection) {
+      myConnections.push(this.previousConnection);
+    }
+    if (this.nextConnection) {
+      myConnections.push(this.nextConnection);
+    }
+    if (all || !this.collapsed_) {
+      for (var i = 0, input; input = this.inputList[i]; i++) {
+        if (input.connection) {
+          myConnections.push(input.connection);
+        }
+      }
+    }
+  }
+  return myConnections;
 };
 
 /**
@@ -584,16 +614,11 @@ Blockly.Block.prototype.getFullColor = function() {
  */
 Blockly.Block.prototype.setFullColor = function(color) {
   this.colorFull_ = color;
-  if (this.svg_) {
-    this.svg_.updateColour();
-  }
   var icons = this.getIcons();
   for (var x = 0; x < icons.length; x++) {
     icons[x].updateColour();
   }
-  if (this.rendered) {
-    this.updateColour();
-  }
+  this.updateColour();
 };
 
 
@@ -938,7 +963,7 @@ Blockly.Block.prototype.jsonInit = function(json) {
       'Must not have both an output and a previousStatement.');
 
   // Set basic properties of block.
-  this.setFullColour(json['colour']);
+  this.setFullColor(json['colour']);
 
   // Parse the message and interpolate the arguments.
   // Build a list of elements.
@@ -1258,7 +1283,7 @@ Blockly.Block.prototype.moveBy = function(dx, dy) {
 /**
  * Makes a block unmoveable, undeletetable, and disables its context menu
  * May make any fields on the block uneditable
- * IF YOU CALL THIS, YOU MUST SUBSEQUENTLY CALL <Block>.svg_.updateColour TO GET THE CORRECT COLORS
+ * IF YOU CALL THIS, YOU MUST SUBSEQUENTLY CALL <Block>.updateColour TO GET THE CORRECT COLORS
  */
 Blockly.Block.prototype.freeze = function(options) {
   this.frozen = true;
@@ -1275,7 +1300,7 @@ Blockly.Block.prototype.freeze = function(options) {
   // check for inline input that needs to be frozen
   if (this.inputsInline) {
     var inputs = this.inputList.filter(function (input) { return input.type === Blockly.INPUT_VALUE; });
-    inputs.forEach(function(input) { input.connection.targetBlock().freeze(options); input.connection.targetBlock().svg_.updateColour(); });
+    inputs.forEach(function(input) { input.connection.targetBlock().freeze(options); input.connection.targetBlock().updateColour(); });
   }
 };
 
@@ -1330,11 +1355,11 @@ Blockly.Block.prototype.getInlineInput = function(inputName, fieldName) {
   return this.getInput(inputName).connection.targetBlock().getFieldValue(fieldName)
 }
 
-Blockly.Block.prototype.getNextStatementInput = function() {
-  if (this.inputList) {
-    var inputs = this.inputList.filter(function (input) { return input.type === Blockly.NEXT_STATEMENT; });
-    if (inputs.length > 1) { throw new Error("There should only be one NEXT_STATEMENT input"); } 
-    return inputs[0];
-  }
-  return undefined;
-}
+// Blockly.Block.prototype.getNextStatementInput = function() {
+//   if (this.inputList) {
+//     var inputs = this.inputList.filter(function (input) { return input.type === Blockly.NEXT_STATEMENT; });
+//     if (inputs.length > 1) { throw new Error("There should only be one NEXT_STATEMENT input"); } 
+//     return inputs[0];
+//   }
+//   return undefined;
+// }

@@ -241,6 +241,7 @@ Blockly.Workspace.prototype.updateToolbox = function(tree) {
     this.options.languageTree = tree;
     this.flyout_.show(tree.childNodes);
   }
+  Blockly.fireUiEvent(Blockly.getMainWorkspace().flyout_.svgGroup_, "toolboxUpdated");
 };
 
 // Export symbols that would otherwise be renamed by Closure compiler.

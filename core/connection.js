@@ -512,7 +512,6 @@ Blockly.Connection.prototype.closest = function(maxLimit, dx, dy) {
  * @private
  */
 Blockly.Connection.prototype.checkType_ = function(otherConnection) {
-<<<<<<< HEAD
   if ((this.sourceBlock_.frozen || otherConnection.sourceBlock_.frozen) && !this.neverFrozen && !otherConnection.neverFrozen) {
     return false;
   }

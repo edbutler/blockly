@@ -631,7 +631,7 @@ Blockly.Flyout.prototype.createBlockFunc_ = function(originBlock) {
     // Create the new block by cloning the block in the flyout (via XML).
     var xml = Blockly.Xml.blockToDom_(originBlock);
     var block = Blockly.Xml.domToBlock(flyout.targetWorkspace_, xml);
-    block.id = Blockly.genUid();
+    block.id = Blockly.Blocks.genUid();
 
     var svgRootNew = block.getSvgRoot();
     if (!svgRootNew) {
