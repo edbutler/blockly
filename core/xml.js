@@ -63,6 +63,7 @@ Blockly.Xml.blockToDom_ = function(block) {
   var element = goog.dom.createDom('block');
   element.setAttribute('type', block.type);
   element.setAttribute('id', block.id);
+  element.setAttribute('default', block.isDefault);
   if (block.mutationToDom) {
     // Custom data for an advanced block.
     var mutation = block.mutationToDom();
@@ -288,8 +289,7 @@ Blockly.Xml.domToBlock = function(workspace, xmlBlock, opt_reuseBlock) {
  * @return {!Blockly.Block} The root block created.
  * @private
  */
-Blockly.Xml.domToBlockHeadless_ =
-    function(workspace, xmlBlock, opt_reuseBlock) {
+Blockly.Xml.domToBlockHeadless_ = function(workspace, xmlBlock, opt_reuseBlock) {
   var block = null;
   var prototypeName = xmlBlock.getAttribute('type');
   if (!prototypeName) {
@@ -327,8 +327,7 @@ Blockly.Xml.domToBlockHeadless_ =
 
     // Find the first 'real' grandchild node (that isn't whitespace).
     var firstRealGrandchild = null;
-    for (var j = 0, grandchildNode; grandchildNode = xmlChild.childNodes[j];
-         j++) {
+    for (var j = 0, grandchildNode; grandchildNode = xmlChild.childNodes[j]; j++) {
       if (grandchildNode.nodeType != 3 || !grandchildNode.data.match(/^\s*$/)) {
         firstRealGrandchild = grandchildNode;
       }
@@ -441,6 +440,10 @@ Blockly.Xml.domToBlockHeadless_ =
   var collapsed = xmlBlock.getAttribute('collapsed');
   if (collapsed) {
     block.setCollapsed(collapsed == 'true');
+  }
+  var isDefault = xmlBlock.getAttribute('default')
+  if (isDefault) {
+    block.isDefault = isDefault == 'true';
   }
   return block;
 };
