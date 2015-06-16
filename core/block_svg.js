@@ -250,7 +250,7 @@ Blockly.BlockSvg.terminateDrag_ = function() {
  * Set parent of this block to be a new block or null.
  * @param {Blockly.BlockSvg} newParent New parent block.
  */
-Blockly.BlockSvg.prototype.setParent = function(newParent) {
+Blockly.BlockSvg.prototype.setParent = function(newParent, replacement) {
   var svgRoot = this.getSvgRoot();
   if (this.parentBlock_ && svgRoot) {
     // Move this block up the DOM.  Keep track of x/y translations.
@@ -260,7 +260,7 @@ Blockly.BlockSvg.prototype.setParent = function(newParent) {
         'translate(' + xy.x + ', ' + xy.y + ')');
   }
 
-  Blockly.BlockSvg.superClass_.setParent.call(this, newParent);
+  var disposeLater = Blockly.BlockSvg.superClass_.setParent.call(this, newParent, replacement);
 
   if (newParent) {
     var oldXY = this.getRelativeToSurfaceXY();
@@ -269,6 +269,8 @@ Blockly.BlockSvg.prototype.setParent = function(newParent) {
     // Move the connections to match the child's new position.
     this.moveConnections_(newXY.x - oldXY.x, newXY.y - oldXY.y);
   }
+
+  return disposeLater;
 };
 
 /**

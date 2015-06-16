@@ -290,6 +290,7 @@ Blockly.Block.prototype.duplicateParam = function() {
   var newBlock = Blockly.Xml.domToBlock(
       /** @type {!Blockly.Workspace} */ (this.workspace), xmlBlock);
   newBlock.isDefault = true;
+  newBlock.id = Blockly.Blocks.genUid();
   return newBlock;
 };
 
@@ -451,7 +452,7 @@ Blockly.Block.prototype.setParent = function(newParent, replacement) {
       this.previousConnection.disconnect();
     }
     if (this.outputConnection && this.outputConnection.targetConnection) {
-      this.outputConnection.disconnect(replacement);
+      var disposeLater = this.outputConnection.disconnect(replacement);
     }
     // This block hasn't actually moved on-screen, so there's no need to update
     // its connection locations.
@@ -471,6 +472,8 @@ Blockly.Block.prototype.setParent = function(newParent, replacement) {
   } else {
     this.workspace.addTopBlock(this);
   }
+
+  return disposeLater;
 };
 
 /**

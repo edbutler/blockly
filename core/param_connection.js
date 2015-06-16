@@ -24,8 +24,8 @@ Blockly.ParamConnection.prototype.disconnect = function(replacement) {
         sourceConnection.connect(param.outputConnection);
     }
 
-    // delete current parameter if we're replacing the default
-    // if (replacement && sourceBlock.isDefault) {
-    //     sourceBlock.dispose();
-    // }
+    // signal caller to delete source
+    if (replacement && sourceBlock.isDefault) {
+        return true;
+    }
 }

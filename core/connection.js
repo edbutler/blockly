@@ -96,7 +96,7 @@ Blockly.Connection.prototype.connect = function(otherConnection) {
     } else if (otherConnection.targetConnection) {
       // If female block is already connected, disconnect and bump the male.
       var orphanBlock = otherConnection.targetBlock();
-      orphanBlock.setParent(null, true);
+      var disposeLater = orphanBlock.setParent(null, true);
       if (!orphanBlock.outputConnection) {
         throw 'Orphan block does not have an output connection.';
       }
@@ -115,7 +115,9 @@ Blockly.Connection.prototype.connect = function(otherConnection) {
           break;
         }
       }
-      if (orphanBlock) {
+      if (disposeLater) {
+        orphanBlock.dispose();
+      } else if (orphanBlock) {
         // Unable to reattach orphan.  Bump it off to the side.
         setTimeout(function() {
               orphanBlock.outputConnection.bumpAwayFrom_(otherConnection);
