@@ -266,8 +266,8 @@ Blockly.WorkspaceSvg.prototype.addTopBlock = function(block) {
  * Remove a block from the list of top blocks.
  * @param {!Blockly.Block} block Block to remove.
  */
-Blockly.WorkspaceSvg.prototype.removeTopBlock = function(block) {
-  Blockly.WorkspaceSvg.superClass_.removeTopBlock.call(this, block);
+Blockly.WorkspaceSvg.prototype.removeTopBlock = function(block, isDelete) {
+  Blockly.WorkspaceSvg.superClass_.removeTopBlock.call(this, block, isDelete);
   if (Blockly.Realtime.isEnabled() && !this.options.parentWorkspace) {
     Blockly.Realtime.removeTopBlock(block);
   }
@@ -372,9 +372,13 @@ Blockly.WorkspaceSvg.prototype.highlightBlock = function(id) {
  * Applications may hook workspace changes by listening for
  * 'blocklyWorkspaceChange' on workspace.getCanvas().
  */
-Blockly.WorkspaceSvg.prototype.fireChangeEvent = function() {
-  if (this.rendered && this.svgBlockCanvas_) {
-    Blockly.fireUiEvent(this.svgBlockCanvas_, 'blocklyWorkspaceChange');
+Blockly.WorkspaceSvg.prototype.fireChangeEvent = function(subtype) {
+  var canvas = this.svgBlockCanvas_;
+  if (this.rendered && canvas) {
+    Blockly.fireUiEvent(canvas, 'blocklyWorkspaceChange');
+    if (subtype === 'delete') {
+      Blockly.fireUiEvent(canvas, 'blocklyBlockDeleted');
+    }
   }
 };
 

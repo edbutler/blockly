@@ -228,14 +228,19 @@ Blockly.Connection.singleConnection_ = function(block, orphanBlock) {
 /**
  * Disconnect this connection.
  */
-Blockly.Connection.prototype.disconnect = function() {
+Blockly.Connection.prototype.disconnect = function(replacement) {
   var otherConnection = this.targetConnection;
   if (!otherConnection) {
     throw 'Source connection not connected.';
   } else if (otherConnection.targetConnection != this) {
     throw 'Target connection not connected to source connection.';
   }
-  otherConnection.targetConnection = null;
+  var disposeLater = false;
+  if (otherConnection instanceof Blockly.ParamConnection) {
+    disposeLater = otherConnection.paramDisconnect(replacement);
+  } else {
+    otherConnection.targetConnection = null;
+  }
   this.targetConnection = null;
 
   // Rerender the parent so that it may reflow.
@@ -256,6 +261,8 @@ Blockly.Connection.prototype.disconnect = function() {
     childBlock.updateDisabled();
     childBlock.render();
   }
+
+  return disposeLater;
 };
 
 /**

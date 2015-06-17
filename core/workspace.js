@@ -45,10 +45,6 @@ Blockly.Workspace = function(opt_options) {
   this.RTL = !!this.options.RTL;
 };
 
-Blockly.Workspace.prototype.fireChangeEventPid_ = null;
-
-Blockly.Workspace.prototype.fireDeleteEventPid_ = null;
-
 /**
  * Workspaces may be headless.
  * @type {boolean} True if visible.  False if headless.
@@ -168,36 +164,6 @@ Blockly.Workspace.prototype.getBlockById = function(id) {
     }
   }
   return null;
-};
-
-/**
- * Fire a change event for this workspace.  Changes include new block, dropdown
- * edits, mutations, connections, etc.  Groups of simultaneous changes (e.g.
- * a tree of blocks being deleted) are merged into one event.
- * Applications may hook workspace changes by listening for
- * 'blocklyWorkspaceChange' on Blockly.mainWorkspace.getCanvas().
- */
-Blockly.Workspace.prototype.fireChangeEvent = function(subtype) {
-  if (this.fireChangeEventPid_) {
-    window.clearTimeout(this.fireChangeEventPid_);
-  }
-  var canvas = this.svgBlockCanvas_;
-  if (canvas) {
-    this.fireChangeEventPid_ = window.setTimeout(function() {
-        Blockly.fireUiEvent(canvas, 'blocklyWorkspaceChange');
-      }, 0);
-  }
-
-  if (subtype === 'delete') {
-    if (this.fireDeleteEventPid_) {
-        window.clearTimeout(this.fireDeleteEventPid_);
-    }
-    if (canvas) {
-        this.fireDeleteEventPid_ = window.setTimeout(function() {
-            Blockly.fireUiEvent(canvas, 'blocklyBlockDeleted');
-        }, 0);
-    }
-  }
 };
 
 /**

@@ -33,42 +33,6 @@ Blockly.Blocks.loops.COLOR = '#000000';
 
 Blockly.Blocks.loops.HUE = 120;
 
-// Blockly.Blocks['controls_repeat'] = {
-//   /**
-//    * Block for repeat n times (internal number).
-//    * @this Blockly.Block
-//    */
-//   init: function() {
-//     this.jsonInit({
-//       "message": Blockly.Msg.CONTROLS_REPEAT_TITLE + " %2 " +
-//           Blockly.Msg.CONTROLS_REPEAT_INPUT_DO + " %3",
-//       "args": [
-//         {
-//           "type": "field_input",
-//           "name": "TIMES",
-//           "text": "10"
-//         },
-//         {
-//           "type": "input_dummy"
-//         },
-//         {
-//           "type": "input_statement",
-//           "name": "DO"
-//         }
-//       ],
-//       "previousStatement": null,
-//       "nextStatement": null,
-//       "colour": Blockly.Blocks.loops.COLOR,
-//       "tooltip": Blockly.Msg.CONTROLS_REPEAT_TOOLTIP,
-//       "helpUrl": Blockly.Msg.CONTROLS_REPEAT_HELPURL
-//     });
-//     this.getField_('TIMES').setChangeHandler(
-//         Blockly.FieldTextInput.nonnegativeIntegerValidator);
-//     // make inner repeat connections immune to freezing
-//     this.inputList[1].connection.neverFrozen = true;
-//   }
-// };
-
 Blockly.Blocks['controls_repeat'] = {
   /**
    * Block for repeat n times (external number).
@@ -80,7 +44,7 @@ Blockly.Blocks['controls_repeat'] = {
           Blockly.Msg.CONTROLS_REPEAT_INPUT_DO + " %3",
       "args": [
         {
-          "type": "input_value",
+          "type": "param_value",
           "name": "TIMES",
           "check": "Number"
         },

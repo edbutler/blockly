@@ -48,12 +48,13 @@ Blockly.Blocks['procedures_defnoreturn'] = {
     nameField.setSpellcheck(false);
     this.appendDummyInput()
         .appendField(Blockly.Msg.PROCEDURES_DEFNORETURN_TITLE)
-        .appendField(nameField, 'NAME')
-        .appendField('', 'PARAMS');
-    // this.setMutator(new Blockly.Mutator(['procedures_mutatorarg']));
-    this.setTooltip(Blockly.Msg.PROCEDURES_DEFNORETURN_TOOLTIP);
+        .appendField(nameField, 'NAME');
     this.arguments_ = [];
+    this.updateParams_();
+    this.setMutator(new Blockly.Mutator(['procedures_mutatorarg']));
+    this.setTooltip(Blockly.Msg.PROCEDURES_DEFNORETURN_TOOLTIP);
     this.setStatements_(true);
+    this.setInputsInline(true);
     this.statementConnection_ = null;
   },
   /**
@@ -94,17 +95,24 @@ Blockly.Blocks['procedures_defnoreturn'] = {
       hash['arg_' + this.arguments_[i].toLowerCase()] = true;
     }
     if (badArg) {
-      this.setWarningText(Blockly.Msg.PROCEDURES_DEF_DUPLICATE_WARNING);
+      this.setWarningText("I might get confused if parameters have the same name.");
     } else {
       this.setWarningText(null);
     }
-    // Merge the arguments into a human-readable list.
-    var paramString = '';
-    if (this.arguments_.length) {
-      paramString = Blockly.Msg.PROCEDURES_BEFORE_PARAMS +
-          ' ' + this.arguments_.join(', ');
+    // Delete everything.
+    var i = 0;
+    while (this.getInput('PARAM' + i)) {
+      this.removeInput('PARAM' + i);
+      i++;
     }
-    this.setFieldValue(paramString, 'PARAMS');
+    // Rebuild block.
+    for (var i = 0; i < this.arguments_.length; i++) {
+      var input = this.appendParamInput('PARAM' + i);
+      this.moveInputBefore('PARAM' + i, "STACK")
+      if (i == 0) {
+        input.appendField(Blockly.Msg.PROCEDURES_BEFORE_PARAMS);
+      }
+    }
   },
   /**
    * Create XML to represent the argument inputs.
@@ -439,6 +447,7 @@ Blockly.Blocks['procedures_callnoreturn'] = {
         .appendField('', 'NAME');
     this.setPreviousStatement(true);
     this.setNextStatement(true);
+    this.setInputsInline(true);
     // Tooltip is set in domToMutation.
     this.arguments_ = [];
     this.quarkConnections_ = {};
