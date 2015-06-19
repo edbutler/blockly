@@ -46,7 +46,7 @@ goog.inherits(Blockly.Warning, Blockly.Icon);
  * Icon in base64 format.
  * @private
  */
-Blockly.Warning.prototype.png_ = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAYAAAA7bUf6AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAANyAAADcgBffIlqAAAAAd0SU1FB98DGgApDBpIGrEAAAGfSURBVDjLnZM9S2NREIbfc2P8AF27BXshpIzK5g9ssUj8C2tnYyUoiBGSyk4sbCLs1vkRgoW1jYWFICwsMV2Se3JPboLe+FhcNCZcjXFgOMzHeec9M2ekDwTIAEUgo68IsOQczdNTIudoAksTg/g+5+UyDxKUyzz4PueTsvhZr+NmZkCC6Wmo1QiAX58FmLKWf4VCDPCiGxtgLf+B9FiQXo+9y0ucBIUCnJ3B+noMdHGBC0P2xrH4HoYEmUx8qVQCgMPD2F5ehjDEjTbZe2s4p5NKRenb2+Qid3dSpaK0tTp+j8VKq0VncXHQh2IxZrK/P/AtLECjQQf4McQEMNbq786O5qwdANfr8Xl/P/AFgbS7qzlr9Qcwr4EoYvPmBud5wxPJ5+HqCtbWhv3GwPU1Lor4/fKMeedo5vPDiRKsrsLWFuRyybFOhxbwTd0upWqVcDQpaTqjWq0SdruU5PvUkiol/ZNRzeXA96mp3aaRzSYnjdNsFtptGiYI2PY8HaVSmu33xWf3K5WS6ffVe3rSgXnzT+YlpSfY00djjJOkZ/wpr41bQMIsAAAAAElFTkSuQmCC';
+Blockly.Warning.prototype.png_ = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAYAAAA7bUf6AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3IAAANyAF98iWoAAAAB3RJTUUH3wYSFhIK2mYo4QAAAbVJREFUOMudk89LG0EUx2dWlyikPRb8AyTkmIrNP9BDQfIvtLfm0JNQDxokguBNeqgFhfYs+C8IPfTaXjz0IoJQliDY/Njs7GSbmdlPD0uqSbaN6YPH8Oa9+b7vvB9C/EOAEtAASuJ/BFiJleu490c2Vq4DrMwNEvXMud3bHyIldm9/GPXM+bwsnndaWlEogJRQKNAO4gh48VCARRWaa2q1DGCktRoqND8AfybIr8Rtdb9cqNFDTk5gYwOkJPz8VSXabs1i8WSgXUSplGVvNgFgdzezV1cZaKcmi+zdN7Ry7xaPP/ji8jI/y9WV8I+P/Dg0h39j8bTfNTG+f1eHRiNjsr09Vp+wPYyBZ2NMAKlC+6m4+XpZWHuH3GplZxCMJXz0tr6sQvsRkH8urU1f3X6/UWPdkBKqVX5+u4b1dSZ9txeBsjZ9OfpGMVauQ7U6FcjaGtTrUKnk+nTsusBjkQxc05ye6amgvO5MqDk908nANUXUM0Fuppw5mdJKhahnAqH6tk25nB80S8tlVN+2pY7MG+F5B96CXEodPHS/vAUpU0ci0nRH3puTohDCn2NPjZRSCSHEbza/s/67eJF4AAAAAElFTkSuQmCC';
 
 /**
  * Create the text for the warning's bubble.
@@ -54,12 +54,14 @@ Blockly.Warning.prototype.png_ = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA
  * @return {!SVGTextElement} The top-level node of the text.
  * @private
  */
-Blockly.Warning.textToDom_ = function(text) {
+Blockly.Warning.textToDom_ = function(text, image) {
+  var g = Blockly.createSvgElement('g', {}, null);
+  var img = Blockly.createSvgElement('image', {width:'20', height:'20', "xlink:href":image}, g);
   var paragraph = /** @type {!SVGTextElement} */ (
       Blockly.createSvgElement('text',
           {'class': 'blocklyText blocklyBubbleText',
            'y': Blockly.Bubble.BORDER_WIDTH},
-          null));
+          g));
   var lines = text.split('\n');
   for (var i = 0; i < lines.length; i++) {
     var tspanElement = Blockly.createSvgElement('tspan',
@@ -67,7 +69,7 @@ Blockly.Warning.textToDom_ = function(text) {
     var textNode = document.createTextNode(lines[i]);
     tspanElement.appendChild(textNode);
   }
-  return paragraph;
+  return g;
 };
 
 /**
@@ -75,6 +77,8 @@ Blockly.Warning.textToDom_ = function(text) {
  * @private
  */
 Blockly.Warning.prototype.text_ = '';
+
+Blockly.Warning.prototype.image_ = '';
 
 /**
  * Show or hide the warning bubble.
@@ -87,7 +91,7 @@ Blockly.Warning.prototype.setVisible = function(visible) {
   }
   if (visible) {
     // Create the bubble.
-    var paragraph = Blockly.Warning.textToDom_(this.text_);
+    var paragraph = Blockly.Warning.textToDom_(this.text_, this.image_);
     this.bubble_ = new Blockly.Bubble(
         /** @type {!Blockly.Workspace} */ (this.block_.workspace),
         paragraph, this.block_.svgPath_,
@@ -126,11 +130,12 @@ Blockly.Warning.prototype.bodyFocus_ = function(e) {
  * Set this warning's text.
  * @param {string} text Warning text.
  */
-Blockly.Warning.prototype.setText = function(text) {
+Blockly.Warning.prototype.setText = function(text, image) {
   if (this.text_ == text) {
     return;
   }
   this.text_ = text;
+  this.image_ = image;
   if (this.isVisible()) {
     this.setVisible(false);
     this.setVisible(true);

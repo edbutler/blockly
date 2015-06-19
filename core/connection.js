@@ -116,6 +116,7 @@ Blockly.Connection.prototype.connect = function(otherConnection) {
         }
       }
       if (disposeLater) {
+        // console.log("disposing of orphan");
         orphanBlock.dispose();
       } else if (orphanBlock) {
         // Unable to reattach orphan.  Bump it off to the side.

@@ -101,19 +101,32 @@ Blockly.Blocks['procedures_defnoreturn'] = {
     }
     // Delete everything.
     var i = 0;
-    while (this.getInput('PARAM' + i)) {
+    var input = this.getInput('PARAM' + i);
+    while (input) {
+      var target = input.connection.targetBlock();
+      target.setParent(null);
+      target.dispose();
       this.removeInput('PARAM' + i);
       i++;
+      input = this.getInput('PARAM' + i);
     }
     // Rebuild block.
     for (var i = 0; i < this.arguments_.length; i++) {
       var input = this.appendParamInput('PARAM' + i);
+      input.noDom = true; // prevent input from being included in xml representation -- can be reconstructed from mutation
       this.moveInputBefore('PARAM' + i, "STACK")
       if (i == 0) {
         input.appendField(Blockly.Msg.PROCEDURES_BEFORE_PARAMS);
       }
+      var xmlField = goog.dom.createDom('field', null, this.arguments_[i]);
+      xmlField.setAttribute('name', 'VAR');
+      var xmlBlock = goog.dom.createDom('block', null, xmlField);
+      xmlBlock.setAttribute('type', 'variables_get');
+      var newBlock = Blockly.Xml.domToBlock(this.workspace, xmlBlock);
+      input.connection.connect(newBlock.outputConnection);
     }
   },
+
   /**
    * Create XML to represent the argument inputs.
    * @return {Element} XML storage element.

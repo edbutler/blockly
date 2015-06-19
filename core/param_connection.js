@@ -18,12 +18,14 @@ Blockly.ParamConnection.prototype.paramDisconnect = function(replacement) {
     // HACK use rendered to check if disconnect is due to deletion
     // only duplicate if there's no replacement being attached
     if (this.sourceBlock_.rendered && !replacement) {
+        // console.log('duplicate');
         var param = targetBlock.duplicateParam();
         this.connect(param.outputConnection);
     }
 
     // signal caller to delete source
     if (replacement && targetBlock.isDefault) {
+        // console.log("paramDisconnect returning true");
         return true;
     }
 }

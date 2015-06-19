@@ -106,7 +106,7 @@ Blockly.Xml.blockToDom_ = function(block) {
   for (var i = 0, input; input = block.inputList[i]; i++) {
     var container;
     var empty = true;
-    if (input.type == Blockly.DUMMY_INPUT) {
+    if (input.type == Blockly.DUMMY_INPUT || input.noDom) {
       continue;
     } else {
       var childBlock = input.connection.targetBlock();

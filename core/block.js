@@ -1370,11 +1370,9 @@ Blockly.Block.prototype.getInlineInput = function(inputName, fieldName) {
   return this.getInput(inputName).connection.targetBlock().getFieldValue(fieldName)
 }
 
-// Blockly.Block.prototype.getNextStatementInput = function() {
-//   if (this.inputList) {
-//     var inputs = this.inputList.filter(function (input) { return input.type === Blockly.NEXT_STATEMENT; });
-//     if (inputs.length > 1) { throw new Error("There should only be one NEXT_STATEMENT input"); } 
-//     return inputs[0];
-//   }
-//   return undefined;
-// }
+Blockly.Block.prototype.getInlineInputType = function(inputName) {
+  var param = this.getInput(inputName).connection.targetBlock();
+  // goog.asserts.assert(param.inputList.length === 1 && param.inputList[0].fieldRow.length === 1,
+  //                     "parameter block does not have expected structure");
+  return param && param.inputList[0].fieldRow[0].name;
+}
