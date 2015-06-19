@@ -123,6 +123,8 @@ Blockly.Blocks['procedures_defnoreturn'] = {
       var xmlBlock = goog.dom.createDom('block', null, xmlField);
       xmlBlock.setAttribute('type', 'variables_get');
       var newBlock = Blockly.Xml.domToBlock(this.workspace, xmlBlock);
+      newBlock.setEditable(false);
+      input.connection.sourceOnly = true;
       input.connection.connect(newBlock.outputConnection);
     }
   },
@@ -332,19 +334,19 @@ Blockly.Blocks['procedures_defnoreturn'] = {
     options.push(option);
 
     // Add options to create getters for each parameter.
-    if (!this.isCollapsed()) {
-      for (var i = 0; i < this.arguments_.length; i++) {
-        var option = {enabled: true};
-        var name = this.arguments_[i];
-        option.text = Blockly.Msg.VARIABLES_SET_CREATE_GET.replace('%1', name);
-        var xmlField = goog.dom.createDom('field', null, name);
-        xmlField.setAttribute('name', 'VAR');
-        var xmlBlock = goog.dom.createDom('block', null, xmlField);
-        xmlBlock.setAttribute('type', 'variables_get');
-        option.callback = Blockly.ContextMenu.callbackFactory(this, xmlBlock);
-        options.push(option);
-      }
-    }
+    // if (!this.isCollapsed()) {
+    //   for (var i = 0; i < this.arguments_.length; i++) {
+    //     var option = {enabled: true};
+    //     var name = this.arguments_[i];
+    //     option.text = Blockly.Msg.VARIABLES_SET_CREATE_GET.replace('%1', name);
+    //     var xmlField = goog.dom.createDom('field', null, name);
+    //     xmlField.setAttribute('name', 'VAR');
+    //     var xmlBlock = goog.dom.createDom('block', null, xmlField);
+    //     xmlBlock.setAttribute('type', 'variables_get');
+    //     option.callback = Blockly.ContextMenu.callbackFactory(this, xmlBlock);
+    //     options.push(option);
+    //   }
+    // }
   },
   callType_: 'procedures_callnoreturn'
 };

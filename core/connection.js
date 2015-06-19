@@ -528,6 +528,9 @@ Blockly.Connection.prototype.checkType_ = function(otherConnection) {
   if (otherConnection.sourceBlock_.frozen && otherConnection.targetConnection && otherConnection.targetConnection.sourceBlock_.frozen) {
     return false;
   }
+  if ((this.sourceOnly && otherConnection.sourceBlock_ === Blockly.selected) || (otherConnection.sourceOnly && this.sourceBlock_ === Blockly.selected)) {
+    return false;
+  }
   // Don't split a connection where both sides are immovable.
   var thisTargetBlock = this.targetBlock();
   if (thisTargetBlock && !thisTargetBlock.isMovable() &&
