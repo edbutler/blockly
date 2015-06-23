@@ -387,6 +387,9 @@ Blockly.Xml.domToBlockHeadless_ = function(workspace, xmlBlock, opt_reuseBlock) 
               firstRealGrandchild, opt_reuseBlock);
           if (blockChild.outputConnection) {
             input.connection.connect(blockChild.outputConnection);
+            if (blockChild.isDefault) {
+              input.connection.defaultBlock = firstRealGrandchild;
+            }
           } else if (blockChild.previousConnection) {
             input.connection.connect(blockChild.previousConnection);
           } else {
@@ -442,8 +445,8 @@ Blockly.Xml.domToBlockHeadless_ = function(workspace, xmlBlock, opt_reuseBlock) 
     block.setCollapsed(collapsed == 'true');
   }
   var isDefault = xmlBlock.getAttribute('default')
-  if (isDefault) {
-    block.isDefault = isDefault == 'true';
+  if (isDefault && isDefault == 'true') {
+    block.isDefault = true;
   }
   return block;
 };

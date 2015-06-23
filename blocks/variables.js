@@ -82,6 +82,20 @@ Blockly.Blocks['variables_get'] = {
     xmlBlock.setAttribute('type', this.contextMenuType_);
     option.callback = Blockly.ContextMenu.callbackFactory(this, xmlBlock);
     options.push(option);
+  },
+
+  // check if this variable would be defined if attached to parent 
+  // (assumes variables are only defined inside procedures)
+  checkForContext: function(parent) {
+    var procedureHasVar = false;
+    var varName = this.getVars()[0]; // for some reason this returns a list
+    while(parent) {
+      if (parent.type === "procedures_defnoreturn") {
+        procedureHasVar = procedureHasVar || parent.getVars().indexOf(varName) !== -1;
+      }
+      parent = parent.parentBlock_;
+    }
+    return procedureHasVar;
   }
 };
 

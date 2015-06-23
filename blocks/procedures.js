@@ -122,8 +122,10 @@ Blockly.Blocks['procedures_defnoreturn'] = {
       xmlField.setAttribute('name', 'VAR');
       var xmlBlock = goog.dom.createDom('block', null, xmlField);
       xmlBlock.setAttribute('type', 'variables_get');
+      xmlBlock.setAttribute('default', true);
       var newBlock = Blockly.Xml.domToBlock(this.workspace, xmlBlock);
       newBlock.setEditable(false);
+      input.connection.defaultBlock = xmlBlock;
       input.connection.sourceOnly = true;
       input.connection.connect(newBlock.outputConnection);
     }
@@ -676,6 +678,18 @@ Blockly.Blocks['procedures_callnoreturn'] = {
       def && def.select();
     };
     options.push(option);
+  },
+
+  // check if this would be a recursive call if connected to parent
+  checkForRecursion: function(parent) {
+    // get to top level block since it will be the procedure def (if there is one)
+    while(parent.parentBlock_) {
+      parent = parent.parentBlock_;
+    }
+    if (parent.type === "procedures_defnoreturn") {
+      return parent.getProcedureDef()[0] === this.getProcedureCall(); // getProcedureDef returns a tuple
+    }
+    return false;
   }
 };
 

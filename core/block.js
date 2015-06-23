@@ -283,17 +283,6 @@ Blockly.Block.prototype.duplicate_ = function() {
   return newBlock;
 };
 
-Blockly.Block.prototype.duplicateParam = function() {
-  // Create a duplicate via XML.
-  var xmlBlock = Blockly.Xml.blockToDom_(this);
-  Blockly.Xml.deleteNext(xmlBlock);
-  var newBlock = Blockly.Xml.domToBlock(
-      /** @type {!Blockly.Workspace} */ (this.workspace), xmlBlock);
-  newBlock.isDefault = true;
-  newBlock.id = Blockly.Blocks.genUid();
-  return newBlock;
-};
-
 /**
  * Returns all connections originating from this block.
  * @param {boolean} all If true, return all connections even hidden ones.
@@ -1367,7 +1356,8 @@ Blockly.Block.prototype.forEach = function(fn) {
 };
 
 Blockly.Block.prototype.getInlineInput = function(inputName, fieldName) {
-  return this.getInput(inputName).connection.targetBlock().getFieldValue(fieldName)
+  var input = this.getInput(inputName);
+  return input && input.connection && input.connection.targetBlock() && input.connection.targetBlock().getFieldValue(fieldName)
 }
 
 Blockly.Block.prototype.getInlineInputType = function(inputName) {

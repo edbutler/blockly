@@ -19,8 +19,11 @@ Blockly.ParamConnection.prototype.paramDisconnect = function(replacement) {
     // only duplicate if there's no replacement being attached
     if (this.sourceBlock_.rendered && !replacement) {
         // console.log('duplicate');
-        var param = targetBlock.duplicateParam();
-        this.connect(param.outputConnection);
+        var newBlock = Blockly.Xml.domToBlock(
+          /** @type {!Blockly.Workspace} */ (this.sourceBlock_.workspace), this.defaultBlock);
+        newBlock.isDefault = true;
+        newBlock.id = Blockly.Blocks.genUid();
+        this.connect(newBlock.outputConnection);
     }
 
     // signal caller to delete source

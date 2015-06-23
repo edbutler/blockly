@@ -492,6 +492,20 @@ Blockly.Connection.prototype.closest = function(maxLimit, dx, dy) {
       return true;
     }
 
+    // only allow variables to connect inside a procedure that uses them
+    if (thisConnection.sourceBlock_.type === "variables_get") {
+      if (!thisConnection.sourceBlock_.checkForContext(connection.sourceBlock_)) {
+        return true;
+      }
+    }
+
+    // don't allow basic recursive calls
+    if (thisConnection.sourceBlock_.type === "procedures_callnoreturn") {
+      if (thisConnection.sourceBlock_.checkForRecursion(connection.sourceBlock_)) {
+        return true;
+      }
+    }
+
     // Don't let blocks try to connect to themselves or ones they nest.
     var targetSourceBlock = connection.sourceBlock_;
     do {
