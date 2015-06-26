@@ -343,14 +343,15 @@ Blockly.createMainWorkspace_ = function(svg, options) {
   if (!options.readOnly && !options.hasScrollbars) {
     var workspaceChanged = function() {
       if (Blockly.dragMode_ == 0) {
+        var toolboxWidth = mainWorkspace.flyout_.width_;
         var metrics = mainWorkspace.getMetrics();
-        var edgeLeft = metrics.viewLeft + metrics.absoluteLeft;
+        var edgeLeft = metrics.viewLeft + metrics.absoluteLeft + toolboxWidth;
         var edgeTop = metrics.viewTop + metrics.absoluteTop;
         if (metrics.contentTop < edgeTop ||
             metrics.contentTop + metrics.contentHeight >
             metrics.viewHeight + edgeTop ||
             metrics.contentLeft <
-                (options.RTL ? metrics.viewLeft : edgeLeft) ||
+                (options.RTL ? metrics.viewLeft: edgeLeft) ||
             metrics.contentLeft + metrics.contentWidth > (options.RTL ?
                 metrics.viewWidth : metrics.viewWidth + edgeLeft)) {
           // One or more blocks may be out of bounds.  Bump them back in.
@@ -368,9 +369,9 @@ Blockly.createMainWorkspace_ = function(svg, options) {
             if (blockXY.y + blockHW.height > metrics.viewTop + metrics.viewHeight) {
               block.moveBy(0, metrics.viewTop + metrics.viewHeight - (blockXY.y + blockHW.height) - 25); // correct for underestimating of block height
             }
-            // Bump any block that's off the left back inside.
-            if (blockXY.x - (Blockly.RTL ? blockHW.width : 0) < metrics.viewLeft) {
-              block.moveBy(metrics.viewLeft - (blockXY.x - (Blockly.RTL ? blockHW.width : 0)), 0);
+            // Bump any block that's off the left back inside. Account for toolbox.
+            if (blockXY.x - (Blockly.RTL ? blockHW.width : 0) < metrics.viewLeft + toolboxWidth) {
+              block.moveBy(metrics.viewLeft + toolboxWidth - (blockXY.x - (Blockly.RTL ? blockHW.width : 0)), 0);
             }
             // Bump any block that's off the right back inside.
             if (blockXY.x + (Blockly.RTL ? 0 : blockHW.width) > metrics.viewLeft + metrics.viewWidth) {

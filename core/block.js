@@ -163,7 +163,7 @@ Blockly.Block.getById = function(id, workspace) {
  *     block from the workspace's list of top blocks.
  */
 Blockly.Block.prototype.dispose = function(healStack, animate,
-                                           opt_dontRemoveFromWorkspace) {
+                                           opt_dontRemoveFromWorkspace, force) {
   this.unplug(healStack, false);
 
   // This block is now at the top of the workspace.
@@ -183,7 +183,13 @@ Blockly.Block.prototype.dispose = function(healStack, animate,
 
   // First, dispose of all my children.
   for (var i = this.childBlocks_.length - 1; i >= 0; i--) {
-    this.childBlocks_[i].dispose(false);
+    var child = this.childBlocks_[i];
+    if (child.isDeletable() || force) {
+      child.dispose(false, false, false, force);
+    } else {
+      child.setParent(null);
+      Blockly.fireUiEventNow(child.workspace.getCanvas(), 'blocklyWorkspaceChange');
+    }
   }
   // Then dispose of myself.
   // Dispose of all inputs and their fields.

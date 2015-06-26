@@ -1164,7 +1164,7 @@ Blockly.BlockSvg.INNER_BOTTOM_LEFT_CORNER_HIGHLIGHT_LTR =
  *     block from the workspace's list of top blocks.
  */
 Blockly.BlockSvg.prototype.dispose = function(healStack, animate,
-                                              opt_dontRemoveFromWorkspace) {
+                                              opt_dontRemoveFromWorkspace, force) {
   // If this block is being dragged, unlink the mouse events.
   if (Blockly.selected == this) {
     Blockly.terminateDrag_();
@@ -1187,7 +1187,7 @@ Blockly.BlockSvg.prototype.dispose = function(healStack, animate,
     icons[x].dispose();
   }
 
-  Blockly.BlockSvg.superClass_.dispose.call(this, healStack);
+  Blockly.BlockSvg.superClass_.dispose.call(this, healStack, false, false, force);
 
   goog.dom.removeNode(this.svgGroup_);
   // Sever JavaScript to DOM connections.
@@ -2261,7 +2261,9 @@ Blockly.BlockSvg.prototype.revertContainer = function() {
   }
   // remove class
   var rootSvg = $(this.getSvgRoot());
-  rootSvg.attr('class', rootSvg.attr('class').replace(" tempExpanded", ""));
+  if (rootSvg.attr('class')) {
+    rootSvg.attr('class', rootSvg.attr('class').replace(" tempExpanded", ""));
+  }
   // shift up successor blocks
   if (this.nextConnection && this.nextConnection.targetBlock()) {
     this.nextConnection.targetBlock().shiftBy(0, this.renderBaseHeight - this.renderSteps[this.renderHeightIndex]);
