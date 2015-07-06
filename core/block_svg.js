@@ -1298,36 +1298,42 @@ Blockly.BlockSvg.prototype.updateColour = function() {
   }
 
   var hexColour = this.getFullColor();
-  if (this.frozen) {
-    // assumes the first field of the first inputList element will be the label of the block, so we check the second field
-    if (this.editable_ && this.inputList[0].fieldRow[1] instanceof Blockly.FieldTextInput) {
-      // assumes an alarming amount about structure of the svg:
-      // -- since blockly builds the svg as nested groups, the selection returns a list of all the text boxes
-      //    we assume the first element will be the closest text box (and therefore the one we want)
-      // -- we assume the first child of the text box group will be the rect whose style we actually need to change
-      var textBoxRect = this.svgGroup_.getElementsByClassName('blocklyEditableText')[0].firstChild;
-      textBoxRect.style.fill = goog.color.rgbArrayToHex(goog.color.lighten(goog.color.hexToRgb(hexColour), 0.3));
-      textBoxRect.style.fillOpacity = 1.0;
-    }
-    // if this is an inline input, we should check the first field
-    else if (this.editable_ && this.inputList[0].fieldRow[0] instanceof Blockly.FieldTextInput) {
-      // assumes an alarming amount about structure of the svg:
-      // -- since blockly builds the svg as nested groups, the selection returns a list of all the text boxes
-      //    we assume the first element will be the closest text box (and therefore the one we want)
-      // -- we assume the first child of the text box group will be the rect whose style we actually need to change
-      var textBoxRect = this.svgGroup_.getElementsByClassName('blocklyEditableText')[0].firstChild;
-      textBoxRect.style.fill = goog.color.rgbArrayToHex(goog.color.lighten(goog.color.hexToRgb(hexColour), 0.3));
-      textBoxRect.style.fillOpacity = 1.0;
-    }
-    hexColour = goog.color.hsvToHex(0, 0, Blockly.HSV_VALUE * 256);
-  }
+  // if (this.frozen) {
+  //   // assumes the first field of the first inputList element will be the label of the block, so we check the second field
+  //   if (this.editable_ && this.inputList[0].fieldRow[1] instanceof Blockly.FieldTextInput) {
+  //     // assumes an alarming amount about structure of the svg:
+  //     // -- since blockly builds the svg as nested groups, the selection returns a list of all the text boxes
+  //     //    we assume the first element will be the closest text box (and therefore the one we want)
+  //     // -- we assume the first child of the text box group will be the rect whose style we actually need to change
+  //     var textBoxRect = this.svgGroup_.getElementsByClassName('blocklyEditableText')[0].firstChild;
+  //     textBoxRect.style.fill = goog.color.rgbArrayToHex(goog.color.lighten(goog.color.hexToRgb(hexColour), 0.3));
+  //     textBoxRect.style.fillOpacity = 1.0;
+  //   }
+  //   // if this is an inline input, we should check the first field
+  //   else if (this.editable_ && this.inputList[0].fieldRow[0] instanceof Blockly.FieldTextInput) {
+  //     // assumes an alarming amount about structure of the svg:
+  //     // -- since blockly builds the svg as nested groups, the selection returns a list of all the text boxes
+  //     //    we assume the first element will be the closest text box (and therefore the one we want)
+  //     // -- we assume the first child of the text box group will be the rect whose style we actually need to change
+  //     var textBoxRect = this.svgGroup_.getElementsByClassName('blocklyEditableText')[0].firstChild;
+  //     textBoxRect.style.fill = goog.color.rgbArrayToHex(goog.color.lighten(goog.color.hexToRgb(hexColour), 0.3));
+  //     textBoxRect.style.fillOpacity = 1.0;
+  //   }
+  //   hexColour = goog.color.hsvToHex(0, 0, Blockly.HSV_VALUE * 256);
+  // }
 
   var rgb = goog.color.hexToRgb(hexColour);
+  if (this.frozen) {
+    console.log(rgb);
+    rgb = goog.color.darken(rgb, 0.4);
+    console.log("frozen")
+    console.log(rgb);
+  }
   var rgbLight = goog.color.lighten(rgb, 0.3);
   var rgbDark = goog.color.darken(rgb, 0.2);
   this.svgPathLight_.setAttribute('stroke', goog.color.rgbArrayToHex(rgbLight));
   this.svgPathDark_.setAttribute('fill', goog.color.rgbArrayToHex(rgbDark));
-  this.svgPath_.setAttribute('fill', hexColour);
+  this.svgPath_.setAttribute('fill', goog.color.rgbArrayToHex(rgb));
 
   var icons = this.getIcons();
   for (var x = 0; x < icons.length; x++) {

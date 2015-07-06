@@ -686,7 +686,7 @@ Blockly.Blocks['procedures_callnoreturn'] = {
     while(parent.parentBlock_) {
       parent = parent.parentBlock_;
     }
-    if (parent.type === "procedures_defnoreturn") {
+    if (parent.getProcedureDef) {
       return parent.getProcedureDef()[0] === this.getProcedureCall(); // getProcedureDef returns a tuple
     }
     return false;

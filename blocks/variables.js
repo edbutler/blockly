@@ -90,7 +90,7 @@ Blockly.Blocks['variables_get'] = {
     var procedureHasVar = false;
     var varName = this.getVars()[0]; // for some reason this returns a list
     while(parent) {
-      if (parent.type === "procedures_defnoreturn") {
+      if (parent.getProcedureDef) {
         procedureHasVar = procedureHasVar || parent.getVars().indexOf(varName) !== -1;
       }
       parent = parent.parentBlock_;
