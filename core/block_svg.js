@@ -1324,10 +1324,7 @@ Blockly.BlockSvg.prototype.updateColour = function() {
 
   var rgb = goog.color.hexToRgb(hexColour);
   if (this.frozen) {
-    console.log(rgb);
     rgb = goog.color.darken(rgb, 0.4);
-    console.log("frozen")
-    console.log(rgb);
   }
   var rgbLight = goog.color.lighten(rgb, 0.3);
   var rgbDark = goog.color.darken(rgb, 0.2);
