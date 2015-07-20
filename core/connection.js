@@ -38,7 +38,9 @@ goog.require('goog.dom');
  */
 Blockly.Connection = function(source, type) {
   this.sourceBlock_ = source;
+  /** @type {Blockly.Connection} */
   this.targetConnection = null;
+  /** @type {number} */
   this.type = type;
   this.x_ = 0;
   this.y_ = 0;
@@ -502,6 +504,11 @@ Blockly.Connection.prototype.closest = function(maxLimit, dx, dy) {
     // don't allow basic recursive calls
     if (thisConnection.sourceBlock_.type === "procedures_callnoreturn") {
       if (thisConnection.sourceBlock_.checkForRecursion(connection.sourceBlock_)) {
+        return true;
+      }
+    }
+    if (connection.sourceBlock_.type === "procedures_callnoreturn") {
+      if (connection.sourceBlock_.checkForRecursion(thisConnection.sourceBlock_)) {
         return true;
       }
     }

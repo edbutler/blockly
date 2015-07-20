@@ -172,7 +172,6 @@
 	"MATH_MODULO_HELPURL": "https://en.wikipedia.org/wiki/Modulo_operation",
 	"MATH_MODULO_TITLE": "resten av %1 ÷ %2",
 	"MATH_MODULO_TOOLTIP": "Returnerar kvoten från divisionen av de två talen.",
-	"MATH_CONSTRAIN_HELPURL": "https://en.wikipedia.org/wiki/Clamping_%28graphics%29",
 	"MATH_CONSTRAIN_TITLE": "begränsa %1 till mellan %2 och %3",
 	"MATH_CONSTRAIN_TOOLTIP": "Begränsa ett tal till att mellan de angivna gränsvärden (inklusive).",
 	"MATH_RANDOM_INT_HELPURL": "https://sv.wikipedia.org/wiki/Slumptalsgenerator",

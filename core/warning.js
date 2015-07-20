@@ -39,6 +39,8 @@ goog.require('Blockly.Icon');
 Blockly.Warning = function(block) {
   Blockly.Warning.superClass_.constructor.call(this, block);
   this.createIcon();
+  // The text_ object can contain multiple warnings
+  this.text_ = { default_: '' };
 };
 goog.inherits(Blockly.Warning, Blockly.Icon);
 
@@ -73,14 +75,6 @@ Blockly.Warning.textToDom_ = function(text, image) {
 };
 
 /**
- * Warning text (if bubble is not visible).
- * @private
- */
-Blockly.Warning.prototype.text_ = '';
-
-Blockly.Warning.prototype.image_ = '';
-
-/**
  * Show or hide the warning bubble.
  * @param {boolean} visible True if the bubble should be visible.
  */
@@ -90,8 +84,12 @@ Blockly.Warning.prototype.setVisible = function(visible) {
     return;
   }
   if (visible) {
-    // Create the bubble.
-    var paragraph = Blockly.Warning.textToDom_(this.text_, this.image_);
+    // Create the bubble to display all warnings.
+    var allWarnings = [];
+    for (var id_ in this.text_) {
+      allWarnings.push(this.text_[id_]);
+    }
+    var paragraph = Blockly.Warning.textToDom_(allWarnings.join('\n'));
     this.bubble_ = new Blockly.Bubble(
         /** @type {!Blockly.Workspace} */ (this.block_.workspace),
         paragraph, this.block_.svgPath_,
@@ -129,16 +127,44 @@ Blockly.Warning.prototype.bodyFocus_ = function(e) {
 /**
  * Set this warning's text.
  * @param {string} text Warning text.
+ * @param {string=} opt_id An optional ID for this text entry to be able to
+ *     maintain multiple warnings.
  */
-Blockly.Warning.prototype.setText = function(text, image) {
-  if (this.text_ == text) {
-    return;
+Blockly.Warning.prototype.setText = function(text, opt_id) {
+  if (opt_id !== undefined) {
+    if (this.text_[opt_id] == text) {
+      return;
+    }
+    this.text_[opt_id] = text;
+  } else {
+    if (this.text_.default_ == text) {
+      return;
+    }
+    this.text_.default_ = text;
   }
-  this.text_ = text;
-  this.image_ = image;
   if (this.isVisible()) {
     this.setVisible(false);
     this.setVisible(true);
+  }
+};
+
+/**
+ * Removes the specified warning text.
+ * @param {string} textId ID of the warning to be removed.
+ */
+Blockly.Warning.prototype.removeText = function(textId) {
+  if (this.text_[textId] === undefined) {
+    return;  // ID not found, no change.
+  }
+  delete this.text_[textId];
+  if (Object.keys(this.text_).length === 0 ||
+      (Object.keys(this.text_).length === 1 && !this.text_.default_)) {
+    this.dispose();
+  } else {
+    if (this.isVisible()) {
+      this.setVisible(false);
+      this.setVisible(true);
+    }
   }
 };
 

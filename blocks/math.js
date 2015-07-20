@@ -29,6 +29,9 @@ goog.provide('Blockly.Blocks.math');
 goog.require('Blockly.Blocks');
 
 
+/**
+ * Common HSV hue for all blocks in this category.
+ */
 Blockly.Blocks.math.HUE = 230;
 
 Blockly.Blocks['math_number'] = {
@@ -255,8 +258,8 @@ Blockly.Blocks['math_change'] = {
    */
   init: function() {
     this.jsonInit({
-      "message": Blockly.Msg.MATH_CHANGE_TITLE,
-      "args": [
+      "message0": Blockly.Msg.MATH_CHANGE_TITLE,
+      "args0": [
         {
           "type": "field_variable",
           "name": "VAR",
@@ -265,8 +268,7 @@ Blockly.Blocks['math_change'] = {
         {
           "type": "input_value",
           "name": "DELTA",
-          "check": "Number",
-          "align": "RIGHT"
+          "check": "Number"
         }
       ],
       "previousStatement": null,
@@ -378,8 +380,8 @@ Blockly.Blocks['math_modulo'] = {
    */
   init: function() {
     this.jsonInit({
-      "message": Blockly.Msg.MATH_MODULO_TITLE,
-      "args": [
+      "message0": Blockly.Msg.MATH_MODULO_TITLE,
+      "args0": [
         {
           "type": "input_value",
           "name": "DIVIDEND",
@@ -407,8 +409,8 @@ Blockly.Blocks['math_constrain'] = {
    */
   init: function() {
     this.jsonInit({
-      "message": Blockly.Msg.MATH_CONSTRAIN_TITLE,
-      "args": [
+      "message0": Blockly.Msg.MATH_CONSTRAIN_TITLE,
+      "args0": [
         {
           "type": "input_value",
           "name": "VALUE",
@@ -441,8 +443,8 @@ Blockly.Blocks['math_random_int'] = {
    */
   init: function() {
     this.jsonInit({
-      "message": Blockly.Msg.MATH_RANDOM_INT_TITLE,
-      "args": [
+      "message0": Blockly.Msg.MATH_RANDOM_INT_TITLE,
+      "args0": [
         {
           "type": "input_value",
           "name": "FROM",

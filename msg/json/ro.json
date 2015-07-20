@@ -170,7 +170,6 @@
 	"MATH_MODULO_HELPURL": "https://en.wikipedia.org/wiki/Modulo_operation",
 	"MATH_MODULO_TITLE": "restul la %1 ÷ %2",
 	"MATH_MODULO_TOOLTIP": "Întoarce restul din împărţirea celor două numere.",
-	"MATH_CONSTRAIN_HELPURL": "https://en.wikipedia.org/wiki/Clamping_%28graphics%29",
 	"MATH_CONSTRAIN_TITLE": "constrânge %1 redus %2 ridicat %3",
 	"MATH_CONSTRAIN_TOOLTIP": "Constrânge un număr să fie între limitele specificate (inclusiv).",
 	"MATH_RANDOM_INT_HELPURL": "https://en.wikipedia.org/wiki/Random_number_generation",

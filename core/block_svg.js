@@ -28,10 +28,10 @@ goog.provide('Blockly.BlockSvg');
 
 goog.require('Blockly.Block');
 goog.require('Blockly.ContextMenu');
+goog.require('goog.Timer');
 goog.require('goog.asserts');
 goog.require('goog.dom');
 goog.require('goog.math.Coordinate');
-goog.require('goog.Timer');
 
 
 /**
@@ -122,8 +122,8 @@ Blockly.BlockSvg.prototype.initSvg = function() {
   }
   // Bind an onchange function, if it exists.
   if (goog.isFunction(this.onchange) && !this.eventsInit_) {
-    Blockly.bindEvent_(this.workspace.getCanvas(), 'blocklyWorkspaceChange',
-        this, this.onchange);
+    this.onchangeWrapper_ = Blockly.bindEvent_(this.workspace.getCanvas(),
+        'blocklyWorkspaceChange', this, this.onchange);
   }
   this.eventsInit_ = true;
 
@@ -499,8 +499,8 @@ Blockly.BlockSvg.prototype.onMouseUp_ = function(e) {
         // Don't throw an object in the trash can if it just got connected.
         this_.workspace.trashcan.close();
       }
-    } else if (this_.workspace.isDeleteArea(e) &&
-        Blockly.selected.isDeletable()) {
+    } else if (Blockly.selected.isDeletable() &&
+        this_.workspace.isDeleteArea(e)) {
       var trashcan = this_.workspace.trashcan;
       if (trashcan) {
         goog.Timer.callOnce(trashcan.close, 100, trashcan);
@@ -1104,7 +1104,7 @@ Blockly.BlockSvg.TOP_LEFT_CORNER_HIGHLIGHT =
  * Includes the top notch, a horizontal space, and the rounded inside corner.
  * @const
  */
-Blockly.BlockSvg.INNER_TOP_LEFT_CORNER = 'h 0.5 ' +
+Blockly.BlockSvg.INNER_TOP_LEFT_CORNER =
     Blockly.BlockSvg.NOTCH_PATH_RIGHT + ' h -' +
     (Blockly.BlockSvg.NOTCH_WIDTH - 15 - Blockly.BlockSvg.CORNER_RADIUS) +
     ' h -0.5 a ' + Blockly.BlockSvg.CORNER_RADIUS + ',' +
@@ -1160,11 +1160,16 @@ Blockly.BlockSvg.INNER_BOTTOM_LEFT_CORNER_HIGHLIGHT_LTR =
  *     the next statement with the previous statement.  Otherwise, dispose of
  *     all children of this block.
  * @param {boolean} animate If true, show a disposal animation and sound.
- * @param {boolean} opt_dontRemoveFromWorkspace If true, don't remove this
+ * @param {boolean=} opt_dontRemoveFromWorkspace If true, don't remove this
  *     block from the workspace's list of top blocks.
  */
 Blockly.BlockSvg.prototype.dispose = function(healStack, animate,
                                               opt_dontRemoveFromWorkspace, force) {
+  // Terminate onchange event calls.
+  if (this.onchangeWrapper_) {
+    Blockly.unbindEvent_(this.onchangeWrapper_);
+    this.onchangeWrapper_ = null;
+  }
   // If this block is being dragged, unlink the mouse events.
   if (Blockly.selected == this) {
     Blockly.terminateDrag_();
@@ -1411,8 +1416,10 @@ Blockly.BlockSvg.prototype.setCommentText = function(text) {
 /**
  * Set this block's warning text.
  * @param {?string} text The text, or null to delete.
+ * @param {string=} opt_id An optional ID for the warning text to be able to
+ *     maintain multiple warnings.
  */
-Blockly.BlockSvg.prototype.setWarningText = function(text, image) {
+Blockly.BlockSvg.prototype.setWarningText = function(text, opt_id) {
   if (this.setWarningText.pid_) {
     // Only queue up the latest change.  Kill any earlier pending process.
     clearTimeout(this.setWarningText.pid_);
@@ -1424,7 +1431,7 @@ Blockly.BlockSvg.prototype.setWarningText = function(text, image) {
     var thisBlock = this;
     this.setWarningText.pid_ = setTimeout(function() {
       thisBlock.setWarningText.pid_ = 0;
-      thisBlock.setWarningText(text, image);
+      thisBlock.setWarningText(text, opt_id);
     }, 100);
     return;
   }
@@ -1437,10 +1444,14 @@ Blockly.BlockSvg.prototype.setWarningText = function(text, image) {
       this.warning = new Blockly.Warning(this);
       changedState = true;
     }
-    this.warning.setText(/** @type {string} */ (text), image);
+    this.warning.setText(/** @type {string} */ (text), opt_id);
   } else {
-    if (this.warning) {
+    // Dispose all warnings if no id is given
+    if (this.warning && opt_id === undefined) {
       this.warning.dispose();
+      changedState = true;
+    } else if (this.warning) {
+      this.warning.removeText(opt_id);
       changedState = true;
     }
   }
@@ -1539,7 +1550,7 @@ Blockly.BlockSvg.prototype.removeDragging = function() {
 /**
  * Render the block.
  * Lays out and reflows a block based on its contents and settings.
- * @param {boolean} opt_bubble If false, just render this block.
+ * @param {boolean=} opt_bubble If false, just render this block.
  *   If true, also render block's parent, grandparent, etc.  Defaults to true.
  */
 Blockly.BlockSvg.prototype.render = function(opt_bubble) {

@@ -31,6 +31,9 @@ goog.require('Blockly.Blocks');
 // placeholder
 Blockly.Blocks.loops.COLOR = '#000000';
 
+/**
+ * Common HSV hue for all blocks in this category.
+ */
 Blockly.Blocks.loops.HUE = 120;
 
 Blockly.Blocks['controls_repeat'] = {
@@ -40,20 +43,12 @@ Blockly.Blocks['controls_repeat'] = {
    */
   init: function() {
     this.jsonInit({
-      "message": Blockly.Msg.CONTROLS_REPEAT_TITLE + " %2 " +
-          Blockly.Msg.CONTROLS_REPEAT_INPUT_DO + " %3",
-      "args": [
+      "message0": Blockly.Msg.CONTROLS_REPEAT_TITLE,
+      "args0": [
         {
           "type": "param_value",
           "name": "TIMES",
           "check": "Number"
-        },
-        {
-          "type": "input_dummy"
-        },
-        {
-          "type": "input_statement",
-          "name": "DO"
         }
       ],
       "previousStatement": true,
@@ -63,6 +58,8 @@ Blockly.Blocks['controls_repeat'] = {
       "tooltip": Blockly.Msg.CONTROLS_REPEAT_TOOLTIP,
       "helpUrl": Blockly.Msg.CONTROLS_REPEAT_HELPURL
     });
+    this.appendStatementInput('DO')
+        .appendField(Blockly.Msg.CONTROLS_REPEAT_INPUT_DO);
     // make inner repeat connections immune to freezing
     this.getNextStatementInput().connection.neverFrozen = true;
   }
@@ -106,8 +103,8 @@ Blockly.Blocks['controls_for'] = {
    */
   init: function() {
     this.jsonInit({
-      "message": Blockly.Msg.CONTROLS_FOR_TITLE,
-      "args": [
+      "message0": Blockly.Msg.CONTROLS_FOR_TITLE,
+      "args0": [
         {
           "type": "field_variable",
           "name": "VAR",
@@ -122,6 +119,7 @@ Blockly.Blocks['controls_for'] = {
         {
           "type": "input_value",
           "name": "TO",
+          "check": "Number",
           "align": "RIGHT"
         },
         {
@@ -193,8 +191,8 @@ Blockly.Blocks['controls_forEach'] = {
    */
   init: function() {
     this.jsonInit({
-      "message": Blockly.Msg.CONTROLS_FOREACH_TITLE,
-      "args": [
+      "message0": Blockly.Msg.CONTROLS_FOREACH_TITLE,
+      "args0": [
         {
           "type": "field_variable",
           "name": "VAR",
@@ -274,12 +272,8 @@ Blockly.Blocks['controls_flow_statements'] = {
    * @this Blockly.Block
    */
   onchange: function() {
-    if (!this.workspace) {
-      // Block has been deleted.
-      return;
-    }
     var legal = false;
-    // Is the block nested in a control statement?
+    // Is the block nested in a loop?
     var block = this;
     do {
       if (block.type == 'controls_repeat' ||

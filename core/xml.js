@@ -143,6 +143,9 @@ Blockly.Xml.blockToDom_ = function(block) {
   if (!block.isEditable()) {
     element.setAttribute('editable', false);
   }
+  if (block.frozen) {
+    element.setAttribute('frozen', true);
+  }
 
   var nextBlock = block.getNextBlock();
   if (nextBlock) {
@@ -332,7 +335,6 @@ Blockly.Xml.domToBlockHeadless_ = function(workspace, xmlBlock, opt_reuseBlock) 
         firstRealGrandchild = grandchildNode;
       }
     }
-
     var name = xmlChild.getAttribute('name');
     switch (xmlChild.nodeName.toLowerCase()) {
       case 'mutation':
@@ -444,9 +446,13 @@ Blockly.Xml.domToBlockHeadless_ = function(workspace, xmlBlock, opt_reuseBlock) 
   if (collapsed) {
     block.setCollapsed(collapsed == 'true');
   }
-  var isDefault = xmlBlock.getAttribute('default')
+  var isDefault = xmlBlock.getAttribute('default');
   if (isDefault && isDefault == 'true') {
     block.isDefault = true;
+  }
+  var isFrozen = xmlBlock.getAttribute('frozen');
+  if (isFrozen && isFrozen == 'true') {
+    block.frozen = true;
   }
   return block;
 };

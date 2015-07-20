@@ -6,7 +6,8 @@
 			"WikiBronze",
 			"Mavrikant",
 			"아라",
-			"Watermelon juice"
+			"Watermelon juice",
+			"Uğurkent"
 		]
 	},
 	"VARIABLES_DEFAULT_NAME": "öge",
@@ -143,7 +144,7 @@
 	"MATH_IS_DIVISIBLE_BY": "bölünebilir",
 	"MATH_IS_TOOLTIP": "Bir sayinin çift mi tek mi , tam mı, asal mı , pozitif mi, negatif mi, veya tam bir  sayıyla bölünebilirliğini kontrol et.'True' veya 'False' değerini döndür.",
 	"MATH_CHANGE_HELPURL": "https://en.wikipedia.org/wiki/Programming_idiom#Incrementing_a_counter",
-	"MATH_CHANGE_TITLE": "Değiştirmek %1 ile %2",
+	"MATH_CHANGE_TITLE": "%1'i %2 kadar değiştir",
 	"MATH_CHANGE_TOOLTIP": "'%1' değişkenine bir sayı ekle.",
 	"MATH_ROUND_TOOLTIP": "Bir sayı yı yukarı yada aşağı yuvarla .",
 	"MATH_ROUND_OPERATOR_ROUND": "Yuvarla",
@@ -169,7 +170,6 @@
 	"MATH_MODULO_HELPURL": "https://en.wikipedia.org/wiki/Modulo_operation",
 	"MATH_MODULO_TITLE": "%1 ÷ %2 nin kalanı",
 	"MATH_MODULO_TOOLTIP": "İki sayının bölümünden kalanı döndür.",
-	"MATH_CONSTRAIN_HELPURL": "https://en.wikipedia.org/wiki/Clamping_%28graphics%29",
 	"MATH_CONSTRAIN_TITLE": "%1 i en düşük %2 en yüksek %3 ile sınırla",
 	"MATH_CONSTRAIN_TOOLTIP": "Bir sayıyı belirli iki sayı arasında sınırlandır(dahil).",
 	"MATH_RANDOM_INT_TITLE": "%1 ile %2 arasında rastgele tam sayı üret",
