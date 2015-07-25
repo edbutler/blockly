@@ -207,7 +207,7 @@ Blockly.WorkspaceSvg.prototype.addFlyout_ = function() {
   this.flyout_ = new Blockly.Flyout(workspaceOptions);
   this.flyout_.autoClose = false;
   var svgFlyout = this.flyout_.createDom();
-  this.svgGroup_.insertBefore(svgFlyout, this.svgBlockCanvas_);
+  this.svgGroup_.appendChild(svgFlyout);
 };
 
 /**

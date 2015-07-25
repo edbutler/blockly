@@ -181,6 +181,7 @@ Blockly.parseOptions_ = function(options) {
     pathToMedia: pathToMedia,
     hasCategories: hasCategories,
     hasScrollbars: hasScrollbars,
+    hasHScroll: options['hasHScroll'],
     hasTrashcan: hasTrashcan,
     hasSounds: hasSounds,
     hasCss: hasCss,
@@ -369,13 +370,15 @@ Blockly.createMainWorkspace_ = function(svg, options) {
             if (blockXY.y + blockHW.height > metrics.viewTop + metrics.viewHeight) {
               block.moveBy(0, metrics.viewTop + metrics.viewHeight - (blockXY.y + blockHW.height) - 25); // correct for underestimating of block height
             }
-            // Bump any block that's off the left back inside. Account for toolbox.
-            if (blockXY.x - (Blockly.RTL ? blockHW.width : 0) < metrics.viewLeft + toolboxWidth) {
-              block.moveBy(metrics.viewLeft + toolboxWidth - (blockXY.x - (Blockly.RTL ? blockHW.width : 0)), 0);
-            }
-            // Bump any block that's off the right back inside.
-            if (blockXY.x + (Blockly.RTL ? 0 : blockHW.width) > metrics.viewLeft + metrics.viewWidth) {
-              block.moveBy(metrics.viewLeft + metrics.viewWidth - (blockXY.x + (Blockly.RTL ? 0 : blockHW.width)), 0);
+            if (!options.hasHScroll) { // don't do horizontal bumping if we're scrolling in that direction
+              // Bump any block that's off the left back inside. Account for toolbox.
+              if (blockXY.x - (Blockly.RTL ? blockHW.width : 0) < metrics.viewLeft + toolboxWidth) {
+                block.moveBy(metrics.viewLeft + toolboxWidth - (blockXY.x - (Blockly.RTL ? blockHW.width : 0)), 0);
+              }
+              // Bump any block that's off the right back inside.
+              if (blockXY.x + (Blockly.RTL ? 0 : blockHW.width) > metrics.viewLeft + metrics.viewWidth) {
+                block.moveBy(metrics.viewLeft + metrics.viewWidth - (blockXY.x + (Blockly.RTL ? 0 : blockHW.width)), 0);
+              }
             }
           }
         }
@@ -453,6 +456,10 @@ Blockly.init_ = function(mainWorkspace) {
   }
   if (options.hasScrollbars) {
     mainWorkspace.scrollbar = new Blockly.ScrollbarPair(mainWorkspace);
+    mainWorkspace.scrollbar.resize();
+  }
+  if (options.hasHScroll) {
+    mainWorkspace.scrollbar = new Blockly.Scrollbar(mainWorkspace, true, false);
     mainWorkspace.scrollbar.resize();
   }
 

@@ -235,16 +235,11 @@ Blockly.Scrollbar.prototype.resize = function(opt_metrics) {
    * .absoluteLeft: Left-edge of view.
    */
   if (this.horizontal_) {
-    var outerLength = hostMetrics.viewWidth - 1;
-    if (this.pair_) {
-      // Shorten the scrollbar to make room for the corner square.
-      outerLength -= Blockly.Scrollbar.scrollbarThickness;
-    } else {
-      // Only show the scrollbar if needed.
-      // Ideally this would also apply to scrollbar pairs, but that's a bigger
-      // headache (due to interactions with the corner square).
-      this.setVisible(outerLength < hostMetrics.contentHeight);
+    var toolboxWidth = 0;
+    if (this.workspace_.flyout_ && this.workspace_.flyout_.getMetrics_ && this.workspace_.flyout_.getMetrics_()) {
+      toolboxWidth = this.workspace_.flyout_.getMetrics_().viewWidth;
     }
+    var outerLength = hostMetrics.viewWidth - 1 - toolboxWidth;
     this.ratio_ = outerLength / hostMetrics.contentWidth;
     if (this.ratio_ === -Infinity || this.ratio_ === Infinity ||
         isNaN(this.ratio_)) {
@@ -254,13 +249,13 @@ Blockly.Scrollbar.prototype.resize = function(opt_metrics) {
     var innerOffset = (hostMetrics.viewLeft - hostMetrics.contentLeft) *
         this.ratio_;
     this.svgKnob_.setAttribute('width', Math.max(0, innerLength));
-    this.xCoordinate = hostMetrics.absoluteLeft + 0.5;
+    this.xCoordinate = hostMetrics.absoluteLeft + 0.5 + toolboxWidth;
     if (this.pair_ && this.workspace_.RTL) {
       this.xCoordinate += hostMetrics.absoluteLeft +
           Blockly.Scrollbar.scrollbarThickness;
     }
     this.yCoordinate = hostMetrics.absoluteTop + hostMetrics.viewHeight -
-        Blockly.Scrollbar.scrollbarThickness - 0.5;
+        Blockly.Scrollbar.scrollbarThickness - 0.5 - 25; // svg taller than visible part of it
     this.svgGroup_.setAttribute('transform',
         'translate(' + this.xCoordinate + ', ' + this.yCoordinate + ')');
     this.svgBackground_.setAttribute('width', Math.max(0, outerLength));
