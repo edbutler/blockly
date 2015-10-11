@@ -513,6 +513,34 @@ Blockly.Connection.prototype.closest = function(maxLimit, dx, dy) {
       }
     }
 
+    function checkChildrenForRecursion(block) {
+      do {
+        if (block && block.type === "procedures_callnoreturn") {
+          // console.log(block);
+          if (block.checkForRecursion(connection.sourceBlock_)) {
+            return true;
+          }
+        }
+        // check nested blocks as well
+        if (block.getNextStatementInput() && block.getNextStatementInput().connection && block.getNextStatementInput().connection.targetBlock()) {
+          if (checkChildrenForRecursion(block.getNextStatementInput().connection.targetBlock())) {
+            return true;
+          }
+        }
+        if (block.nextConnection) {
+          block = block.nextConnection.targetBlock();
+        } else {
+          block = null;
+        }
+      } while(block);
+      return false;
+    }
+
+    // check the children of the dragged block to make sure they won't introduce recursion either
+    if (checkChildrenForRecursion(thisConnection.sourceBlock_)) {
+      return true;
+    }
+
     // Don't let blocks try to connect to themselves or ones they nest.
     var targetSourceBlock = connection.sourceBlock_;
     do {
