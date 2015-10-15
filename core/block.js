@@ -81,6 +81,7 @@ Blockly.Block.obtain = function(workspace, prototypeName) {
  *     type-specific functions for this block.
  */
 Blockly.Block.prototype.initialize = function(workspace, prototypeName) {
+  /** @type {string} */
   this.id = Blockly.Blocks.genUid();
   workspace.addTopBlock(this);
   this.fill(workspace, prototypeName);
@@ -127,6 +128,8 @@ Blockly.Block.prototype.fill = function(workspace, prototypeName) {
   this.movable_ = true;
   /** @type {boolean} */
   this.editable_ = true;
+  /** @type {boolean} */
+  this.isShadow_ = false;
   /** @type {boolean} */
   this.collapsed_ = false;
 
@@ -286,30 +289,6 @@ Blockly.Block.prototype.shiftBy = function(dx, dy) {
   this.getSvgRoot().setAttribute('transform',
       'translate(' + (xy.x + dx) + ', ' + (xy.y + dy) + ')');
 }
-
-/**
- * Duplicate this block and its children.
- * @return {!Blockly.Block} The duplicate.
- * @private
- */
-Blockly.Block.prototype.duplicate_ = function() {
-  // Create a duplicate via XML.
-  var xmlBlock = Blockly.Xml.blockToDom_(this);
-  Blockly.Xml.deleteNext(xmlBlock);
-  var newBlock = Blockly.Xml.domToBlock(
-      /** @type {!Blockly.Workspace} */ (this.workspace), xmlBlock);
-  // Move the duplicate next to the old block.
-  var xy = this.getRelativeToSurfaceXY();
-  if (this.RTL) {
-    xy.x -= Blockly.SNAP_RADIUS;
-  } else {
-    xy.x += Blockly.SNAP_RADIUS;
-  }
-  xy.y += Blockly.SNAP_RADIUS * 2;
-  newBlock.moveBy(xy.x, xy.y);
-  newBlock.select();
-  return newBlock;
-};
 
 /**
  * Returns all connections originating from this block.
@@ -530,7 +509,8 @@ Blockly.Block.prototype.setDeletable = function(deletable) {
  * @return {boolean} True if movable.
  */
 Blockly.Block.prototype.isMovable = function() {
-  return this.movable_ && !(this.workspace && this.workspace.options.readOnly);
+  return this.movable_ && !this.isShadow_ &&
+      !(this.workspace && this.workspace.options.readOnly);
 };
 
 /**
@@ -539,6 +519,22 @@ Blockly.Block.prototype.isMovable = function() {
  */
 Blockly.Block.prototype.setMovable = function(movable) {
   this.movable_ = movable;
+};
+
+/**
+ * Get whether this block is a shadow block or not.
+ * @return {boolean} True if a shadow.
+ */
+Blockly.Block.prototype.isShadow = function() {
+  return this.isShadow_;
+};
+
+/**
+ * Set whether this block is a shadow block or not.
+ * @param {boolean} shadow True if a shadow.
+ */
+Blockly.Block.prototype.setShadow = function(shadow) {
+  this.isShadow_ = shadow;
 };
 
 /**
@@ -558,12 +554,6 @@ Blockly.Block.prototype.setEditable = function(editable) {
   for (var i = 0, input; input = this.inputList[i]; i++) {
     for (var j = 0, field; field = input.fieldRow[j]; j++) {
       field.updateEditable();
-    }
-  }
-  if (this.rendered) {
-    var icons = this.getIcons();
-    for (var i = 0; i < icons.length; i++) {
-      icons[i].updateEditable();
     }
   }
 };
@@ -804,20 +794,6 @@ Blockly.Block.prototype.setOutput = function(newBoolean, opt_check) {
     this.render();
     this.bumpNeighbours_();
   }
-};
-
-/**
- * Change the output type on a block.
- * @param {string|Array.<string>|null} check Returned type or list of
- *     returned types.  Null or undefined if any type could be returned
- *     (e.g. variable get).  It is fine if this is the same as the old type.
- * @throws {goog.asserts.AssertionError} if the block did not already have an
- *     output.
- */
-Blockly.Block.prototype.changeOutput = function(check) {
-  goog.asserts.assert(this.outputConnection,
-      'Only use changeOutput() on blocks that already have an output.');
-  this.outputConnection.setCheck(check);
 };
 
 /**

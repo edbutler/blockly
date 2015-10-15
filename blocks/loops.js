@@ -36,9 +36,10 @@ Blockly.Blocks.loops.COLOR = '#000000';
  */
 Blockly.Blocks.loops.HUE = 120;
 
+
 Blockly.Blocks['controls_repeat'] = {
   /**
-   * Block for repeat n times (external number).
+   * Block for repeat n times (internal number).
    * @this Blockly.Block
    */
   init: function() {
@@ -48,7 +49,7 @@ Blockly.Blocks['controls_repeat'] = {
         {
           "type": "param_value",
           "name": "TIMES",
-          "check": "Number"
+          "text": "10"
         }
       ],
       "previousStatement": true,
@@ -62,6 +63,8 @@ Blockly.Blocks['controls_repeat'] = {
         .appendField(Blockly.Msg.CONTROLS_REPEAT_INPUT_DO);
     // make inner repeat connections immune to freezing
     this.getNextStatementInput().connection.neverFrozen = true;
+    this.getField('TIMES').setChangeHandler(
+        Blockly.FieldTextInput.nonnegativeIntegerValidator);
   }
 };
 

@@ -143,31 +143,90 @@ Blockly.parseOptions_ = function(options) {
     hasCss = true;
   }
 
-  Blockly.maxBlocks = options['maxBlocks'] || Infinity;
-
+  // See grid documentation at:
+  // https://developers.google.com/blockly/installation/grid
   var grid = options['grid'] || {};
-  if (!grid['spacing']) {
-    grid['spacing'] = 0;
-  } else {
-    grid['spacing'] = parseFloat(grid['spacing']);
-  }
-  if (!grid['colour']) {
-    grid['colour'] = '#888';
-  }
-  if (!grid['length']) {
-    grid['length'] = 1;
-  } else {
-    grid['length'] = parseFloat(grid['length']);
-  }
-  grid['snap'] = grid['spacing'] > 0 && !!grid['snap'];
-  var pathToMedia = 'media/';
-
+  var gridOptions = {};
+  gridOptions.spacing = parseFloat(grid['spacing']) || 0;
+  gridOptions.colour = grid['colour'] || '#888';
+  gridOptions.length = parseFloat(grid['length']) || 1;
+  gridOptions.snap = gridOptions.spacing > 0 && !!grid['snap'];
+  var pathToMedia = 'https://blockly-demo.appspot.com/static/media/';
   if (options['media']) {
     pathToMedia = options['media'];
   } else if (options['path']) {
     // 'path' is a deprecated option which has been replaced by 'media'.
     pathToMedia = options['path'] + 'media/';
   }
+
+/* TODO (fraser): Add documentation page:
+ * https://developers.google.com/blockly/installation/zoom
+ *
+ * enabled
+ *
+ * Set to `true` to allow zooming of the main workspace.  Zooming is only
+ * possible if the workspace has scrollbars.  If `false`, then the options
+ * below have no effect.  Defaults to `false`.
+ *
+ * controls
+ *
+ * Set to `true` to show zoom-in and zoom-out buttons.  Defaults to `true`.
+ *
+ * wheel
+ *
+ * Set to `true` to allow the mouse wheel to zoom.  Defaults to `true`.
+ *
+ * maxScale
+ *
+ * Maximum multiplication factor for how far one can zoom in.  Defaults to `3`.
+ *
+ * minScale
+ *
+ * Minimum multiplication factor for how far one can zoom out.  Defaults to `0.3`.
+ *
+ * scaleSpeed
+ *
+ * For each zooming in-out step the scale is multiplied
+ * or divided respectively by the scale speed, this means that:
+ * `scale = scaleSpeed ^ steps`, note that in this formula
+ * steps of zoom-out are subtracted and zoom-in steps are added.
+ */
+  // See zoom documentation at:
+  // https://developers.google.com/blockly/installation/zoom
+  var zoom = options['zoom'] || {};
+  var zoomOptions = {};
+  zoomOptions.enabled = hasScrollbars && !!zoom['enabled'];
+  if (zoomOptions.enabled) {
+    if (zoom['controls'] === undefined) {
+      zoomOptions.controls = true;
+    } else {
+      zoomOptions.controls = !!zoom['controls'];
+    }
+    if (zoom['wheel'] === undefined) {
+      zoomOptions.wheel = true;
+    } else {
+      zoomOptions.wheel = !!zoom['wheel'];
+    }
+    if (zoom['maxScale'] === undefined) {
+      zoomOptions.maxScale = 3;
+    } else {
+      zoomOptions.maxScale = parseFloat(zoom['maxScale']);
+    }
+    if (zoom['minScale'] === undefined) {
+      zoomOptions.minScale = 0.3;
+    } else {
+      zoomOptions.minScale = parseFloat(zoom['minScale']);
+    }
+    if (zoom['scaleSpeed'] === undefined) {
+      zoomOptions.scaleSpeed = 1.2;
+    } else {
+      zoomOptions.scaleSpeed = parseFloat(zoom['scaleSpeed']);
+    }
+  } else {
+    zoomOptions.controls = false;
+    zoomOptions.wheel = false;
+  }
+
   var enableRealtime = !!options['realtime'];
   var realtimeOptions = enableRealtime ? options['realtimeOptions'] : undefined;
 
@@ -186,7 +245,8 @@ Blockly.parseOptions_ = function(options) {
     hasSounds: hasSounds,
     hasCss: hasCss,
     languageTree: languageTree,
-    gridOptions: grid,
+    gridOptions: gridOptions,
+    zoomOptions: zoomOptions,
     enableRealtime: enableRealtime,
     realtimeOptions: realtimeOptions
   };
@@ -234,9 +294,9 @@ Blockly.createDom_ = function(container, options) {
   </defs>
   */
   var defs = Blockly.createSvgElement('defs', {}, svg);
-  var filter, feSpecularLighting, feMerge;
+  var rnd = String(Math.random()).substring(2);
   /*
-    <filter id="blocklyEmboss">
+    <filter id="blocklyEmbossFilter837493">
       <feGaussianBlur in="SourceAlpha" stdDeviation="1" result="blur"/>
       <feSpecularLighting in="blur" surfaceScale="1" specularConstant="0.5"
                           specularExponent="10" lighting-color="white"
@@ -249,77 +309,58 @@ Blockly.createDom_ = function(container, options) {
                    k1="0" k2="1" k3="1" k4="0"/>
     </filter>
   */
-  filter = Blockly.createSvgElement('filter', {'id': 'blocklyEmboss'}, defs);
+  var embossFilter = Blockly.createSvgElement('filter',
+      {'id': 'blocklyEmbossFilter' + rnd}, defs);
   Blockly.createSvgElement('feGaussianBlur',
-      {'in': 'SourceAlpha', 'stdDeviation': 1, 'result': 'blur'}, filter);
-  feSpecularLighting = Blockly.createSvgElement('feSpecularLighting',
+      {'in': 'SourceAlpha', 'stdDeviation': 1, 'result': 'blur'}, embossFilter);
+  var feSpecularLighting = Blockly.createSvgElement('feSpecularLighting',
       {'in': 'blur', 'surfaceScale': 1, 'specularConstant': 0.5,
        'specularExponent': 10, 'lighting-color': 'white', 'result': 'specOut'},
-      filter);
+      embossFilter);
   Blockly.createSvgElement('fePointLight',
       {'x': -5000, 'y': -10000, 'z': 20000}, feSpecularLighting);
   Blockly.createSvgElement('feComposite',
       {'in': 'specOut', 'in2': 'SourceAlpha', 'operator': 'in',
-       'result': 'specOut'}, filter);
+       'result': 'specOut'}, embossFilter);
   Blockly.createSvgElement('feComposite',
       {'in': 'SourceGraphic', 'in2': 'specOut', 'operator': 'arithmetic',
-       'k1': 0, 'k2': 1, 'k3': 1, 'k4': 0}, filter);
+       'k1': 0, 'k2': 1, 'k3': 1, 'k4': 0}, embossFilter);
+  options.embossFilterId = embossFilter.id;
   /*
-    <filter id="blocklyShadowFilter">
-      <feGaussianBlur stdDeviation="2"/>
-    </filter>
-  */
-  filter = Blockly.createSvgElement('filter',
-      {'id': 'blocklyShadowFilter'}, defs);
-  Blockly.createSvgElement('feGaussianBlur', {'stdDeviation': 2}, filter);
-  /*
-    <pattern id="blocklyDisabledPattern" patternUnits="userSpaceOnUse"
+    <pattern id="blocklyDisabledPattern837493" patternUnits="userSpaceOnUse"
              width="10" height="10">
       <rect width="10" height="10" fill="#aaa" />
       <path d="M 0 0 L 10 10 M 10 0 L 0 10" stroke="#cc0" />
     </pattern>
   */
   var disabledPattern = Blockly.createSvgElement('pattern',
-      {'id': 'blocklyDisabledPattern', 'patternUnits': 'userSpaceOnUse',
+      {'id': 'blocklyDisabledPattern' + rnd,
+       'patternUnits': 'userSpaceOnUse',
        'width': 10, 'height': 10}, defs);
   Blockly.createSvgElement('rect',
       {'width': 10, 'height': 10, 'fill': '#aaa'}, disabledPattern);
   Blockly.createSvgElement('path',
       {'d': 'M 0 0 L 10 10 M 10 0 L 0 10', 'stroke': '#cc0'}, disabledPattern);
+  options.disabledPatternId = disabledPattern.id;
   /*
-    <pattern id="blocklyGridPattern837493" patternUnits="userSpaceOnUse"
-             width="10" height="10">
-      <rect width="1" height="1" stroke="#888" />
-      <rect width="1" height="1" stroke="#888" />
+    <pattern id="blocklyGridPattern837493" patternUnits="userSpaceOnUse">
+      <rect stroke="#888" />
+      <rect stroke="#888" />
     </pattern>
   */
-  // MSIE freaks if it sees a 0x0 pattern, so set empty patterns to 100x100.
-  var safeSpacing = options.gridOptions['spacing'] || 100;
   var gridPattern = Blockly.createSvgElement('pattern',
-      {'id': 'blocklyGridPattern' + String(Math.random()).substring(2),
-       'patternUnits': 'userSpaceOnUse',
-       'width': safeSpacing,
-       'height': safeSpacing}, defs);
+      {'id': 'blocklyGridPattern' + rnd,
+       'patternUnits': 'userSpaceOnUse'}, defs);
   if (options.gridOptions['length'] > 0 && options.gridOptions['spacing'] > 0) {
-    var half = Math.floor(options.gridOptions['spacing'] / 2) + .5;
-    var start = half - options.gridOptions['length'] / 2;
-    var end = half + options.gridOptions['length'] / 2;
     Blockly.createSvgElement('line',
-        {'x1': start,
-         'y1': half,
-         'x2': end,
-         'y2': half,
-         'stroke': options.gridOptions['colour']},
+        {'stroke': options.gridOptions['colour']},
         gridPattern);
     if (options.gridOptions['length'] > 1) {
       Blockly.createSvgElement('line',
-          {'x1': half,
-           'y1': start,
-           'x2': half,
-           'y2': end,
-           'stroke': options.gridOptions['colour']},
+          {'stroke': options.gridOptions['colour']},
           gridPattern);
     }
+    // x1, y1, x1, x2 properties will be set later in updateGridPattern_.
   }
   options.gridPattern = gridPattern;
   options.svg = svg;
@@ -449,7 +490,7 @@ Blockly.init_ = function(mainWorkspace) {
       if (options.RTL) {
         mainWorkspace.scrollX *= -1;
       }
-      var translation = 'translate(' + mainWorkspace.scrollX + ', 0)';
+      var translation = 'translate(' + mainWorkspace.scrollX + ',0)';
       mainWorkspace.getCanvas().setAttribute('transform', translation);
       mainWorkspace.getBubbleCanvas().setAttribute('transform', translation);
     }
@@ -469,6 +510,10 @@ Blockly.init_ = function(mainWorkspace) {
         [options.pathToMedia + 'click.mp3',
          options.pathToMedia + 'click.wav',
          options.pathToMedia + 'click.ogg'], 'click');
+    mainWorkspace.loadAudio_(
+        [options.pathToMedia + 'disconnect.wav',
+         options.pathToMedia + 'disconnect.mp3',
+         options.pathToMedia + 'disconnect.ogg'], 'disconnect');
     mainWorkspace.loadAudio_(
         [options.pathToMedia + 'delete.mp3',
          options.pathToMedia + 'delete.ogg',
