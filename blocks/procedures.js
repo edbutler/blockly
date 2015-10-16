@@ -157,6 +157,9 @@ Blockly.Blocks['procedures_defnoreturn'] = {
       container.appendChild(parameter);
     }
 
+    // HACK add dummmy attribute for no argument to ensure toolbox gets updated with caller (it's super byzantine)
+    container.setAttribute('no_args', this.arguments_ && this.arguments_.length > 0);
+
     // Save whether the statement input is visible.
     if (!this.hasStatements_) {
       container.setAttribute('statements', 'false');

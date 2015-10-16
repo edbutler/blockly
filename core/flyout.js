@@ -641,16 +641,16 @@ Blockly.Flyout.prototype.createBlockFunc_ = function(originBlock) {
       return;
     }
 
-    // Create the new block by cloning the block in the flyout (via XML).
-    var xml = Blockly.Xml.blockToDom_(originBlock);
-    var block = Blockly.Xml.domToBlock(workspace, xml);
-
     // Place it in the same spot as the flyout copy.
     // Do this FIRST because the toolbox might get updated in domToBlock
     var svgRootOld = originBlock.getSvgRoot();
     if (!svgRootOld) {
       throw 'originBlock is not rendered.';
     }
+
+    // Create the new block by cloning the block in the flyout (via XML).
+    var xml = Blockly.Xml.blockToDom_(originBlock);
+    var block = Blockly.Xml.domToBlock(workspace, xml);
 
     block.id = Blockly.Blocks.genUid();
 
