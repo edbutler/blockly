@@ -199,7 +199,7 @@ Blockly.Connection.prototype.connect = function(otherConnection) {
               }, Blockly.BUMP_DELAY);
           // Restore the shadow.
         }
-        otherCon1nection.setShadowDom(shadowDom);
+        otherConnection.setShadowDom(shadowDom);
       }
     }
   } else {
