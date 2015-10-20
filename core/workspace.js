@@ -165,6 +165,17 @@ Blockly.Workspace.prototype.getBlockById = function(id) {
   return null;
 };
 
+Blockly.Workspace.prototype.getOption = function(op) {
+  var curOptions = this.options;
+  do {
+    if (curOptions[op]) {
+      return curOptions[op];
+    }
+    curOptions = curOptions.parentWorkspace && curOptions.parentWorkspace.options;
+  } while(curOptions);
+  return null;
+}
+
 /**
  * The number of blocks that may be added to the workspace before reaching
  *     the maxBlocks.

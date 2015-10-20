@@ -555,6 +555,9 @@ Blockly.Block.prototype.setEditable = function(editable) {
     for (var j = 0, field; field = input.fieldRow[j]; j++) {
       field.updateEditable();
     }
+    if (input.connection && input.connection.targetBlock() && input.connection.targetBlock().editable_ !== editable) {
+      input.connection.targetBlock().setEditable(editable);
+    }
   }
 };
 

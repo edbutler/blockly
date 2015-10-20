@@ -1016,8 +1016,9 @@ Blockly.BlockSvg.prototype.setMovable = function(movable) {
 Blockly.BlockSvg.prototype.setEditable = function(editable) {
   Blockly.BlockSvg.superClass_.setEditable.call(this, editable);
   if (this.rendered) {
-    for (var i = 0; i < this.icons_.length; i++) {
-      this.icons_[i].updateEditable();
+    var icons = this.getIcons();
+    for (var i = 0; i < icons.length; i++) {
+      icons[i].updateEditable();
     }
   }
 };
@@ -1553,7 +1554,7 @@ Blockly.BlockSvg.prototype.updateDisabled = function() {
       Blockly.addClass_(/** @type {!Element} */ (this.svgGroup_),
                         'blocklyDisabled');
       this.svgPath_.setAttribute('fill',
-          'url(#' + this.workspace.options.disabledPatternId + ')');
+          'url(#' + this.workspace.getOption("disabledPatternId") + ')');
     }
   } else {
     if (hasClass) {
