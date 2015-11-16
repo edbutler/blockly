@@ -928,9 +928,9 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
           if (expanding) {
             var xy = this_.getRelativeToSurfaceXY();
             // adjustment so the connection of dragged block lines up with highlighted connection
-            var sourceDx = source.previousConnection.x_ - source.getRelativeToSurfaceXY().x;
-            // connections aren't moved when block is dragged, so we add in the block position delta (dx,dy), computed above
-            outline.attr('transform', "translate(" + (-(input.connection.x_ + dx) + xy.x + sourceDx) + "," + (-(input.connection.y_ + dy) + xy.y) + ")"); // position outline
+            var sourceDx = source.previousConnection.x_ - source.getRelativeToSurfaceXY().x; // offset of previous connection on block being expanded around
+            // connections aren't moved when block is dragged, so we compute the offsets using the starting position (this_.dragStartXY)
+            outline.attr('transform', "translate(" + (-(input.connection.x_ - this_.dragStartXY_.x) + sourceDx) + "," + -(input.connection.y_ - this_.dragStartXY_.y) + ")"); // position outline
             // no need to shift existing blocks
             $(source.getSvgRoot()).append(outline); // add outline to svg
             // no search for containing blocks needed
@@ -953,8 +953,8 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
           if (source.inputList && sourceInput && Blockly.highlightedConnection_ === sourceInput.connection) {
             var xy = source.getRelativeToSurfaceXY();
             // adjustment so the connection of dragged block lines up with highlighted connection
-            // connections aren't moved when block is dragged, so we add in the block position delta (dx), computed above
-            var thisDx = this_.previousConnection.x_ + dx - this_.getRelativeToSurfaceXY().x;
+            // connections aren't moved when block is dragged, so we compute the offsets using the starting position (this_.dragStartXY)
+            var thisDx = this_.previousConnection.x_ - this_.dragStartXY_.x; // offset of dragged block's previous connection
             outline.attr('transform', "translate(" + ((sourceInput.connection.x_ - xy.x) - thisDx) + "," + (sourceInput.connection.y_ - xy.y) + ")"); // position outline
             // no need to shift existing blocks
             $(source.getSvgRoot()).append(outline); // add outline to svg

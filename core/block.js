@@ -29,7 +29,6 @@ goog.provide('Blockly.Block');
 goog.require('Blockly.Blocks');
 goog.require('Blockly.Comment');
 goog.require('Blockly.Connection');
-goog.require('Blockly.ParamConnection');
 goog.require('Blockly.ContextMenu');
 goog.require('Blockly.Input');
 goog.require('Blockly.Mutator');
@@ -195,7 +194,7 @@ Blockly.Block.getById = function(id, workspace) {
  *     block from the workspace's list of top blocks.
  */
 Blockly.Block.prototype.dispose = function(healStack, animate,
-                                           opt_dontRemoveFromWorkspace, force) {
+                                           opt_dontRemoveFromWorkspace) {
   this.unplug(healStack, false);
 
   // This block is now at the top of the workspace.
@@ -216,8 +215,8 @@ Blockly.Block.prototype.dispose = function(healStack, animate,
   // First, dispose of all my children.
   for (var i = this.childBlocks_.length - 1; i >= 0; i--) {
     var child = this.childBlocks_[i];
-    if (child.isDeletable() || force) {
-      child.dispose(false, false, false, force);
+    if (!child.frozen || this.frozen) {
+      child.dispose(false);
     } else {
       child.setParent(null);
       Blockly.fireUiEventNow(child.workspace.getCanvas(), 'blocklyWorkspaceChange');
@@ -954,11 +953,6 @@ Blockly.Block.prototype.appendDummyInput = function(opt_name) {
   return this.appendInput_(Blockly.DUMMY_INPUT, opt_name || '');
 };
 
-// appends an INPUT_VALUE input with a ParamConnection
-Blockly.Block.prototype.appendParamInput = function(name) {
-  return this.appendInput_(Blockly.PARAM_VALUE, name);
-};
-
 /**
  * Initialize this block using a cross-platform, internationalization-friendly
  * JSON description.
@@ -1069,9 +1063,6 @@ Blockly.Block.prototype.interpolate_ = function(message, args, lastDummyAlign) {
           case 'input_statement':
             input = this.appendStatementInput(element['name']);
             break;
-          case 'param_value':
-            input = this.appendParamInput(element['name']);
-            break;
           case 'input_dummy':
             input = this.appendDummyInput(element['name']);
             break;
@@ -1149,10 +1140,6 @@ Blockly.Block.prototype.appendInput_ = function(type, name) {
   var connection = null;
   if (type == Blockly.INPUT_VALUE || type == Blockly.NEXT_STATEMENT) {
     connection = new Blockly.Connection(this, type);
-  }
-  if (type == Blockly.PARAM_VALUE) {
-    connection = new Blockly.ParamConnection(this, Blockly.INPUT_VALUE);
-    type = Blockly.INPUT_VALUE
   }
   var input = new Blockly.Input(type, name, this, connection);
   // Append input to list.

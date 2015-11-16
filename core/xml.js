@@ -63,7 +63,7 @@ Blockly.Xml.blockToDom_ = function(block) {
   var element = goog.dom.createDom(block.isShadow() ? 'shadow' : 'block');
   element.setAttribute('type', block.type);
   element.setAttribute('id', block.id);
-  element.setAttribute('default', block.isDefault);
+  if (block.isDefault) element.setAttribute('default', block.isDefault);
 
   if (block.mutationToDom) {
     // Custom data for an advanced block.

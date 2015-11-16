@@ -47,7 +47,7 @@ Blockly.Blocks['controls_repeat'] = {
       "message0": Blockly.Msg.CONTROLS_REPEAT_TITLE,
       "args0": [
         {
-          "type": "param_value",
+          "type": "input_value",
           "name": "TIMES",
           "text": "10"
         }

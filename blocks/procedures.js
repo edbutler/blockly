@@ -125,7 +125,7 @@ Blockly.Blocks['procedures_defnoreturn'] = {
     }
     // Rebuild block.
     for (var i = 0; i < this.arguments_.length; i++) {
-      var input = this.appendParamInput('PARAM' + i);
+      var input = this.appendInput_('PARAM' + i);
       input.noDom = true; // prevent input from being included in xml representation -- can be reconstructed from mutation
       this.moveInputBefore('PARAM' + i, "STACK")
       if (i == 0) {
