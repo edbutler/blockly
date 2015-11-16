@@ -194,7 +194,7 @@ Blockly.Block.getById = function(id, workspace) {
  *     block from the workspace's list of top blocks.
  */
 Blockly.Block.prototype.dispose = function(healStack, animate,
-                                           opt_dontRemoveFromWorkspace) {
+                                           opt_dontRemoveFromWorkspace, force) {
   this.unplug(healStack, false);
 
   // This block is now at the top of the workspace.
@@ -215,8 +215,8 @@ Blockly.Block.prototype.dispose = function(healStack, animate,
   // First, dispose of all my children.
   for (var i = this.childBlocks_.length - 1; i >= 0; i--) {
     var child = this.childBlocks_[i];
-    if (!child.frozen || this.frozen) {
-      child.dispose(false);
+    if (!child.frozen || this.frozen || force) {
+      child.dispose(false, false, false, force);
     } else {
       child.setParent(null);
       Blockly.fireUiEventNow(child.workspace.getCanvas(), 'blocklyWorkspaceChange');
