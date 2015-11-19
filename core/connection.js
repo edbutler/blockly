@@ -314,7 +314,11 @@ Blockly.Connection.prototype.disconnect = function(replacement) {
     throw 'Target connection not connected to source connection.';
   }
   var disposeLater = false;
-  otherConnection.targetConnection = null;
+  if (otherConnection instanceof Blockly.ParamConnection) {
+    disposeLater = otherConnection.paramDisconnect(replacement);
+  } else {
+    otherConnection.targetConnection = null;
+  }
   this.targetConnection = null;
 
   // Rerender the parent so that it may reflow.

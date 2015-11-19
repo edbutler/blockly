@@ -126,6 +126,10 @@ Blockly.PREVIOUS_STATEMENT = 4;
  */
 Blockly.DUMMY_INPUT = 5;
 
+// never actually the type of an input or connection, only used to 
+// single ParamConnection should be used instead of Connection
+Blockly.PARAM_VALUE = 6;
+
 /**
  * ENUM for left alignment.
  * @const
