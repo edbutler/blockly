@@ -359,6 +359,14 @@ Blockly.createDom_ = function(container, options) {
     }
     // x1, y1, x1, x2 properties will be set later in updateGridPattern_.
   }
+
+  var flyoutMask = Blockly.createSvgElement('mask',
+      {'id': 'flyoutMask',
+        'maskUnits': 'userSpaceOnUse',
+        'x':0, 'y':0, 'width': '100%', 'height': '100%'}, defs);
+  Blockly.createSvgElement('rect',
+      {'x':0, 'y':0, 'width': 0, 'height': '100%', 'fill': '#fff'}, flyoutMask);
+
   options.gridPattern = gridPattern;
   options.svg = svg;
   return svg;

@@ -123,6 +123,10 @@ Blockly.Flyout.prototype.width_ = 0;
  */
 Blockly.Flyout.prototype.height_ = 0;
 
+Blockly.Flyout.prototype.CUTOFF_WIDTH = 150;
+
+Blockly.Flyout.prototype.cutoff_width_ = Blockly.Flyout.prototype.CUTOFF_WIDTH;
+
 /**
  * Creates the flyout's DOM.  Only needs to be called once.
  * @return {!Element} The flyout's SVG group.
@@ -135,7 +139,8 @@ Blockly.Flyout.prototype.createDom = function() {
   </g>
   */
   this.svgGroup_ = Blockly.createSvgElement('g',
-      {'class': 'blocklyFlyout'}, null);
+      {'class': 'blocklyFlyout',
+       'mask': 'url(#flyoutMask)'}, null);
   this.svgBackground_ = Blockly.createSvgElement('path',
       {'class': 'blocklyFlyoutBackground'}, this.svgGroup_);
   this.svgGroup_.appendChild(this.workspace_.createDom());
@@ -265,11 +270,11 @@ Blockly.Flyout.prototype.position = function() {
     // Hidden components will return null.
     return;
   }
-  var edgeWidth = this.width_ - this.CORNER_RADIUS;
+  var edgeWidth = this.fullWidth_ - this.CORNER_RADIUS;
   if (this.RTL) {
     edgeWidth *= -1;
   }
-  var path = ['M ' + (this.RTL ? this.width_ : 0) + ',0'];
+  var path = ['M ' + (this.RTL ? this.fullWidth_ : 0) + ',0'];
   path.push('h', edgeWidth);
   path.push('a', this.CORNER_RADIUS, this.CORNER_RADIUS, 0, 0,
       this.RTL ? 0 : 1,
@@ -287,7 +292,7 @@ Blockly.Flyout.prototype.position = function() {
   var x = metrics.absoluteLeft;
   if (this.RTL) {
     x += metrics.viewWidth;
-    x -= this.width_;
+    x -= this.fullWidth_;
   }
   this.svgGroup_.setAttribute('transform',
       'translate(' + x + ',' + metrics.absoluteTop + ')');
@@ -498,6 +503,8 @@ Blockly.Flyout.prototype.reflow = function() {
   flyoutWidth += Blockly.BlockSvg.TAB_WIDTH;
   flyoutWidth *= this.workspace_.scale;
   flyoutWidth += margin * 1.5 + Blockly.Scrollbar.scrollbarThickness;
+  this.fullWidth_ = flyoutWidth;
+  flyoutWidth = Math.min(flyoutWidth, this.cutoff_width_);
   if (this.width_ != flyoutWidth) {
     for (var x = 0, block; block = blocks[x]; x++) {
       var blockHW = block.getHeightWidth();
@@ -525,6 +532,20 @@ Blockly.Flyout.prototype.reflow = function() {
     // Fire a resize event to update the flyout's scrollbar.
     Blockly.fireUiEvent(window, 'resize');
   }
+};
+
+Blockly.Flyout.prototype.show_all = function () {
+  this.cutoff_width_ = 1000; // truncate nothing
+  this.reflow();
+  this.targetWorkspace_.recordDeleteAreas();
+  Blockly.fireUiEvent(this.svgGroup_, "toolboxUpdated");
+};
+
+Blockly.Flyout.prototype.show_cutoff = function () {
+  this.cutoff_width_ = this.CUTOFF_WIDTH; // truncate normally
+  this.reflow();
+  this.targetWorkspace_.recordDeleteAreas();
+  Blockly.fireUiEvent(this.svgGroup_, "toolboxUpdated");
 };
 
 /**
