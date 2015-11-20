@@ -107,9 +107,9 @@ Blockly.Blocks['controls_for'] = {
       "message0": Blockly.Msg.CONTROLS_FOR_TITLE,
       "args0": [
         {
-          "type": "field_variable",
-          "name": "VAR",
-          "variable": null
+          "type": "param_value",
+          "name": "COUNTER",
+          "text": "i"
         },
         {
           "type": "input_value",
@@ -133,7 +133,7 @@ Blockly.Blocks['controls_for'] = {
       "inputsInline": true,
       "previousStatement": null,
       "nextStatement": null,
-      "colour": Blockly.Blocks.loops.HUE,
+      "colour": Blockly.Blocks.loops.COLOR,
       "helpUrl": Blockly.Msg.CONTROLS_FOR_HELPURL
     });
     this.appendStatementInput('DO')
