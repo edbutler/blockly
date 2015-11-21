@@ -546,6 +546,10 @@ Blockly.Flyout.prototype.show_cutoff = function () {
   this.reflow();
   this.targetWorkspace_.recordDeleteAreas();
   Blockly.fireUiEvent(this.svgGroup_, "toolboxUpdated");
+  setTimeout(function (this_) {
+    this_.fullWidth_ = this_.width_;
+    this_.position();
+  }, 500, this);
 };
 
 /**
