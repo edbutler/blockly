@@ -664,36 +664,44 @@ Blockly.Connection.prototype.closest = function(maxLimit, dx, dy) {
  */
 Blockly.Connection.prototype.checkType_ = function(otherConnection) {
   if ((this.sourceBlock_.frozen || otherConnection.sourceBlock_.frozen) && !this.neverFrozen && !otherConnection.neverFrozen) {
+    //console.log("frozen, one block");
     return false;
   }
   if (otherConnection.sourceBlock_.frozen && otherConnection.targetConnection && otherConnection.targetConnection.sourceBlock_.frozen) {
+    //console.log("frozen, both blocks");
     return false;
   }
   if ((this.sourceOnly && otherConnection.sourceBlock_ === Blockly.selected) || (otherConnection.sourceOnly && this.sourceBlock_ === Blockly.selected)) {
+    //console.log("sourceOnly");
     return false;
   }
   // Don't split a connection where both sides are immovable.
   var thisTargetBlock = this.targetBlock();
   if (thisTargetBlock && !thisTargetBlock.isMovable() &&
       !this.sourceBlock_.isMovable()) {
+    //console.log("immovable, this");
     return false;
   }
   var otherTargetBlock = otherConnection.targetBlock();
   if (otherTargetBlock && !otherTargetBlock.isMovable() &&
       !otherConnection.sourceBlock_.isMovable()) {
+    //console.log("immovable, other");
     return false;
   }
   if (!this.check_ || !otherConnection.check_) {
     // One or both sides are promiscuous enough that anything will fit.
+    //console.log("promiscuous");
     return true;
   }
   // Find any intersection in the check lists.
   for (var i = 0; i < this.check_.length; i++) {
     if (otherConnection.check_.indexOf(this.check_[i]) != -1) {
+      //console.log("intersection");
       return true;
     }
   }
   // No intersection.
+  //console.log("no intersection");
   return false;
 };
 

@@ -143,8 +143,8 @@ Blockly.Procedures.rename = function(text) {
   // Rename any callers.
   var blocks = this.sourceBlock_.workspace.getAllBlocks();
   for (var i = 0; i < blocks.length; i++) {
-    if (blocks[i].renameProcedure) {
-      blocks[i].renameProcedure(this.text_, text);
+    if (blocks[i].renameProcedure) { // procedure call blocks have this defined
+      blocks[i].renameProcedure(this.text_, text); // only renames to text those calls that match current name this.text_
     }
   }
   // cap at 25 characters

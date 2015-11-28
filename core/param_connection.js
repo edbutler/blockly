@@ -7,7 +7,7 @@ goog.require('Blockly.Connection');
 Blockly.ParamConnection = function(source, type) {
     Blockly.ParamConnection.superClass_.constructor.call(this, source, type);
 
-}
+};
 goog.inherits(Blockly.ParamConnection, Blockly.Connection);
 
 Blockly.ParamConnection.prototype.paramDisconnect = function(replacement) {
@@ -31,4 +31,4 @@ Blockly.ParamConnection.prototype.paramDisconnect = function(replacement) {
         // console.log("paramDisconnect returning true");
         return true;
     }
-}
+};

@@ -1401,14 +1401,23 @@ Blockly.Block.prototype.forEach = function(fn) {
   } while (block);
 };
 
-Blockly.Block.prototype.getInlineInput = function(inputName, fieldName) {
+Blockly.Block.prototype.getInlineInputValue = function(inputName, fieldName) {
   var input = this.getInput(inputName);
-  return input && input.connection && input.connection.targetBlock() && input.connection.targetBlock().getFieldValue(fieldName)
-}
+  goog.asserts.assertObject(input, 'Input "%s" not found.', inputName);
+  return input.connection && input.connection.targetBlock() && input.connection.targetBlock().getFieldValue(fieldName)
+};
+
+Blockly.Block.prototype.setInlineInputValue = function(newValue, inputName, fieldName) {
+  var input = this.getInput(inputName);
+  goog.asserts.assertObject(input, 'Input "%s" not found.', inputName);
+  if (input.connection && input.connection.targetBlock()) {
+    input.connection.targetBlock().setFieldValue(newValue, fieldName);
+  }
+};
 
 Blockly.Block.prototype.getInlineInputType = function(inputName) {
   var param = this.getInput(inputName).connection.targetBlock();
   // goog.asserts.assert(param.inputList.length === 1 && param.inputList[0].fieldRow.length === 1,
   //                     "parameter block does not have expected structure");
   return param && param.inputList[0].fieldRow[0].name;
-}
+};

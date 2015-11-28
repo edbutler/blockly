@@ -270,6 +270,7 @@ Blockly.Flyout.prototype.position = function() {
     // Hidden components will return null.
     return;
   }
+  if (!this.fullWidth_) { this.fullWidth_ = this.width_; }
   var edgeWidth = this.fullWidth_ - this.CORNER_RADIUS;
   if (this.RTL) {
     edgeWidth *= -1;
@@ -488,7 +489,7 @@ Blockly.Flyout.prototype.show = function(xmlList) {
  * Compute width of flyout.  Position button under each block.
  * For RTL: Lay out the blocks right-aligned.
  */
-Blockly.Flyout.prototype.reflow = function() {
+Blockly.Flyout.prototype.reflow = function(show_all) {
   this.workspace_.scale = this.targetWorkspace_.scale;
   var flyoutWidth = 0;
   var margin = this.CORNER_RADIUS;
@@ -503,7 +504,7 @@ Blockly.Flyout.prototype.reflow = function() {
   flyoutWidth += Blockly.BlockSvg.TAB_WIDTH;
   flyoutWidth *= this.workspace_.scale;
   flyoutWidth += margin * 1.5 + Blockly.Scrollbar.scrollbarThickness;
-  this.fullWidth_ = flyoutWidth;
+  if (show_all === true) { this.fullWidth_ = flyoutWidth; } // need === true since reflow is sometimes passed a UIEvent
   flyoutWidth = Math.min(flyoutWidth, this.cutoff_width_);
   if (this.width_ != flyoutWidth) {
     for (var x = 0, block; block = blocks[x]; x++) {
@@ -535,10 +536,12 @@ Blockly.Flyout.prototype.reflow = function() {
 };
 
 Blockly.Flyout.prototype.show_all = function () {
-  this.cutoff_width_ = 1000; // truncate nothing
-  this.reflow();
-  this.targetWorkspace_.recordDeleteAreas();
-  Blockly.fireUiEvent(this.svgGroup_, "toolboxUpdated");
+  if (Blockly.dragMode_ === 0) { // only expand when not dragging
+    this.cutoff_width_ = 1000; // truncate nothing
+    this.reflow(true);
+    this.targetWorkspace_.recordDeleteAreas();
+    Blockly.fireUiEvent(this.svgGroup_, "toolboxUpdated");
+  }
 };
 
 Blockly.Flyout.prototype.show_cutoff = function () {
@@ -549,7 +552,7 @@ Blockly.Flyout.prototype.show_cutoff = function () {
   setTimeout(function (this_) {
     this_.fullWidth_ = this_.width_;
     this_.position();
-  }, 500, this);
+  }, 300, this);
 };
 
 /**
@@ -578,6 +581,7 @@ Blockly.Flyout.prototype.blockMouseDown_ = function(block) {
           'mouseup', this, Blockly.terminateDrag_);
       Blockly.Flyout.onMouseMoveBlockWrapper_ = Blockly.bindEvent_(document,
           'mousemove', this, flyout.onMouseMoveBlock_);
+      flyout.show_cutoff();
     }
     // This event has been handled.  No need to bubble up to the document.
     e.stopPropagation();

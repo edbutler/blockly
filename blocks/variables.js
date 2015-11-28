@@ -88,17 +88,18 @@ Blockly.Blocks['variables_get'] = {
   },
 
   // check if this variable would be defined if attached to parent 
-  // (assumes variables are only defined inside procedures)
+  // (should work for both procedures and for loops -- and maybe other stuff we don't want it to?)
   checkForContext: function(parent) {
-    var procedureHasVar = false;
+    var parentHasVar = false;
     var varName = this.getVars()[0]; // for some reason this returns a list
-    while(parent) {
-      if (parent.getProcedureDef) {
-        procedureHasVar = procedureHasVar || parent.getVars().indexOf(varName) !== -1;
+    // get parent first to forbid connections to the direct parent of variable block source
+    // (e.g., counting loop variable replacing loop start number)
+    while(parent = parent.getSurroundParent()) {
+      if (parent.getVars) {
+        parentHasVar = parentHasVar || parent.getVars().indexOf(varName) !== -1;
       }
-      parent = parent.parentBlock_;
     }
-    return procedureHasVar;
+    return parentHasVar;
   }
 };
 
