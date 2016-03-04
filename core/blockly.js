@@ -28,6 +28,7 @@
 goog.provide('Blockly');
 
 goog.require('Blockly.BlockSvg');
+goog.require('Blockly.Events');
 goog.require('Blockly.FieldAngle');
 goog.require('Blockly.FieldCheckbox');
 goog.require('Blockly.FieldColour');
@@ -41,13 +42,6 @@ goog.require('Blockly.FieldVariable');
 goog.require('Blockly.Generator');
 goog.require('Blockly.Msg');
 goog.require('Blockly.Procedures');
-// Realtime is currently badly broken.  Stub it out.
-//goog.require('Blockly.Realtime');
-Blockly.Realtime = {
-  isEnabled: function() {return false;},
-  blockChanged: function() {},
-  doCommand: function(cmdThunk) {cmdThunk();}
-};
 goog.require('Blockly.Toolbox');
 goog.require('Blockly.WidgetDiv');
 goog.require('Blockly.WorkspaceSvg');
@@ -95,7 +89,7 @@ Blockly.SPRITE = {
  * @param {number} hue Hue on a colour wheel (0-360).
  * @return {string} RGB code, e.g. '#5ba65b'.
  */
-Blockly.makeColour = function(hue) {
+Blockly.hueToRgb = function(hue) {
   return goog.color.hsvToHex(hue, Blockly.HSV_SATURATION,
       Blockly.HSV_VALUE * 255);
 };
@@ -258,7 +252,7 @@ Blockly.svgResize = function(workspace) {
   while (mainWorkspace.options.parentWorkspace) {
     mainWorkspace = mainWorkspace.options.parentWorkspace;
   }
-  var svg = mainWorkspace.options.svg;
+  var svg = mainWorkspace.getParentSvg();
   var div = svg.parentNode;
   if (!div) {
     // Workspace deteted, or something.
@@ -443,7 +437,7 @@ Blockly.longStop_ = function() {
  * @private
  */
 Blockly.copy_ = function(block) {
-  var xmlBlock = Blockly.Xml.blockToDom_(block);
+  var xmlBlock = Blockly.Xml.blockToDom(block);
   if (Blockly.dragMode_ != 2) {
     Blockly.Xml.deleteNext(xmlBlock);
   }
@@ -521,7 +515,7 @@ Blockly.hideChaff = function(opt_allowToolbox) {
  * @this Blockly.WorkspaceSvg
  */
 Blockly.getMainWorkspaceMetrics_ = function() {
-  var svgSize = Blockly.svgSize(this.options.svg);
+  var svgSize = Blockly.svgSize(this.getParentSvg());
   if (this.toolbox_) {
     svgSize.width -= this.toolbox_.width;
   }
@@ -609,6 +603,7 @@ Blockly.setMainWorkspaceMetrics_ = function(xyRatio) {
 };
 
 /**
+<<<<<<< HEAD
  * Execute a command.  Generally, a command is the result of a user action
  * e.g., a click, drag or context menu selection.  Calling the cmdThunk function
  * through doCommand() allows us to capture information that can be used for
@@ -637,6 +632,8 @@ Blockly.addCanvasListener = function(type, func) {
 };
 
 /**
+=======
+>>>>>>> ed76e1b067414ece99912e41e2e99a3148662a1c
  * When something in Blockly's workspace changes, call a function.
  * @param {!Function} func Function to call.
  * @return {!Array.<!Array>} Opaque data that can be passed to

@@ -50,10 +50,29 @@ goog.inherits(Blockly.Warning, Blockly.Icon);
 Blockly.Warning.prototype.collapseHidden = false;
 
 /**
- * Icon in base64 format.
+ * Draw the warning icon.
+ * @param {!Element} group The icon group.
  * @private
  */
-Blockly.Warning.prototype.png_ = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAYAAAA7bUf6AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3IAAANyAF98iWoAAAAB3RJTUUH3wYSFhIK2mYo4QAAAbVJREFUOMudk89LG0EUx2dWlyikPRb8AyTkmIrNP9BDQfIvtLfm0JNQDxokguBNeqgFhfYs+C8IPfTaXjz0IoJQliDY/Njs7GSbmdlPD0uqSbaN6YPH8Oa9+b7vvB9C/EOAEtAASuJ/BFiJleu490c2Vq4DrMwNEvXMud3bHyIldm9/GPXM+bwsnndaWlEogJRQKNAO4gh48VCARRWaa2q1DGCktRoqND8AfybIr8Rtdb9cqNFDTk5gYwOkJPz8VSXabs1i8WSgXUSplGVvNgFgdzezV1cZaKcmi+zdN7Ry7xaPP/ji8jI/y9WV8I+P/Dg0h39j8bTfNTG+f1eHRiNjsr09Vp+wPYyBZ2NMAKlC+6m4+XpZWHuH3GplZxCMJXz0tr6sQvsRkH8urU1f3X6/UWPdkBKqVX5+u4b1dSZ9txeBsjZ9OfpGMVauQ7U6FcjaGtTrUKnk+nTsusBjkQxc05ye6amgvO5MqDk908nANUXUM0Fuppw5mdJKhahnAqH6tk25nB80S8tlVN+2pY7MG+F5B96CXEodPHS/vAUpU0ci0nRH3puTohDCn2NPjZRSCSHEbza/s/67eJF4AAAAAElFTkSuQmCC';
+Blockly.Warning.prototype.drawIcon_ = function(group) {
+  // Triangle with rounded corners.
+  Blockly.createSvgElement('path',
+      {'class': 'blocklyIconShape',
+       'd': 'M2,15Q-1,15 0.5,12L6.5,1.7Q8,-1 9.5,1.7L15.5,12Q17,15 14,15z'},
+       group);
+  // Can't use a real '!' text character since different browsers and operating
+  // systems render it differently.
+  // Body of exclamation point.
+  Blockly.createSvgElement('path',
+      {'class': 'blocklyIconSymbol',
+       'd': 'm7,4.8v3.16l0.27,2.27h1.46l0.27,-2.27v-3.16z'},
+       group);
+  // Dot of exclamation point.
+  Blockly.createSvgElement('rect',
+      {'class': 'blocklyIconSymbol',
+       'x': '7', 'y': '11', 'height': '2', 'width': '2'},
+       group);
+};
 
 /**
  * Create the text for the warning's bubble.
