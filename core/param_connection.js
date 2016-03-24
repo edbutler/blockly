@@ -22,7 +22,7 @@ Blockly.ParamConnection.prototype.paramDisconnect = function(replacement) {
         var newBlock = Blockly.Xml.domToBlock(
           /** @type {!Blockly.Workspace} */ (this.sourceBlock_.workspace), this.defaultBlock);
         newBlock.isDefault = true;
-        newBlock.id = Blockly.Blocks.genUid();
+        newBlock.id = Blockly.genUid();
         this.connect(newBlock.outputConnection);
     }
 

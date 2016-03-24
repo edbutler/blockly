@@ -528,7 +528,6 @@ Blockly.BlockSvg.prototype.onMouseDown_ = function(e) {
  * @private
  */
 Blockly.BlockSvg.prototype.onMouseUp_ = function(e) {
-  var this_ = this;
   Blockly.terminateDrag_();
   if (Blockly.selected && Blockly.highlightedConnection_) {
     // get the block the highlighted connection is currently connected to
@@ -537,7 +536,7 @@ Blockly.BlockSvg.prototype.onMouseUp_ = function(e) {
 
     // clean up any displacement
     if (target && target.previousConnection) {
-      target.shiftBy(0, -this_.getHeightWidth().height);
+      target.shiftBy(0, -this.getHeightWidth().height);
     }
     var blocksToRevert = [];
     var current = target ? target : Blockly.highlightedConnection_.sourceBlock_;
@@ -553,20 +552,20 @@ Blockly.BlockSvg.prototype.onMouseUp_ = function(e) {
 
     // Connect two blocks together.
     Blockly.localConnection_.connect(Blockly.highlightedConnection_);
-    if (this_.rendered) {
+    if (this.rendered) {
       // Trigger a connection animation.
       // Determine which connection is inferior (lower in the source stack).
       var inferiorConnection = Blockly.localConnection_.isSuperior() ?
           Blockly.highlightedConnection_ : Blockly.localConnection_;
       inferiorConnection.sourceBlock_.connectionUiEffect();
     }
-    if (this_.workspace.trashcan) {
+    if (this.workspace.trashcan) {
       // Don't throw an object in the trash can if it just got connected.
-      this_.workspace.trashcan.close();
+      this.workspace.trashcan.close();
     }
-  } else if (!this_.getParent() && Blockly.selected.isDeletable() &&
-      this_.workspace.isDeleteArea(e)) {
-    var trashcan = this_.workspace.trashcan;
+  } else if (!this.getParent() && Blockly.selected.isDeletable() &&
+      this.workspace.isDeleteArea(e)) {
+    var trashcan = this.workspace.trashcan;
     if (trashcan) {
       goog.Timer.callOnce(trashcan.close, 100, trashcan);
     }
@@ -854,17 +853,17 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
       // containing blocks (e.g. repeat) that need to be reverted
       var blocksToRevert = [];
 
-      // un-expand using saved initial height (i.e. this_.renderBaseHeight)
-      if (this_.getNextStatementInput()) {
-        this_.renderSteps[this_.renderHeightIndex] = this_.renderBaseHeight;
-        this_.svgPath_.setAttribute('d', this_.renderSteps.join(' '));
+      // un-expand using saved initial height (i.e. this.renderBaseHeight)
+      if (this.getNextStatementInput()) {
+        this.renderSteps[this.renderHeightIndex] = this.renderBaseHeight;
+        this.svgPath_.setAttribute('d', this.renderSteps.join(' '));
       }
 
       // clean up displacement
       // Blockly highlights the next connections, so this gives us the block we need to displace
       if (Blockly.highlightedConnection_.targetBlock()) {
         var target = Blockly.highlightedConnection_.targetBlock();
-        target.shiftBy(0, -this_.getHeightWidth().height);
+        target.shiftBy(0, -this.getHeightWidth().height);
         searchStartBlock = target;
       } else {
         searchStartBlock = source;
@@ -902,11 +901,11 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
 
       // expand around target stack if applicable
       var expanding = false;
-      var input = this_.getNextStatementInput();
+      var input = this.getNextStatementInput();
       if (input && localConnection === input.connection) {
         var h = closestConnection.sourceBlock_.getHeightWidth().height;
-        this_.renderSteps[this_.renderHeightIndex] = h;
-        this_.svgPath_.setAttribute('d', this_.renderSteps.join(' '));
+        this.renderSteps[this.renderHeightIndex] = h;
+        this.svgPath_.setAttribute('d', this.renderSteps.join(' '));
         expanding = true;
       }
 
@@ -928,17 +927,17 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
       if (Blockly.highlightedConnection_.targetBlock()) {
         // Blockly highlights the next connections, so this gives us the block we need to displace
         var target = Blockly.highlightedConnection_.targetBlock();
-        outline.attr('transform', "translate(0," + (-this_.getHeightWidth().height) + ")"); // position outline
-        target.shiftBy(0, this_.getHeightWidth().height); // shift existing blocks
+        outline.attr('transform', "translate(0," + (-this.getHeightWidth().height) + ")"); // position outline
+        target.shiftBy(0, this.getHeightWidth().height); // shift existing blocks
         $(target.getSvgRoot()).append(outline); // add outline to svg
         searchStartBlock = target;
       } else { // otherwise we case on the nature of the connection
         if (expanding) {
-          var xy = this_.getRelativeToSurfaceXY();
+          var xy = this.getRelativeToSurfaceXY();
           // adjustment so the connection of dragged block lines up with highlighted connection
           var sourceDx = source.previousConnection.x_ - source.getRelativeToSurfaceXY().x; // offset of previous connection on block being expanded around
-          // connections aren't moved when block is dragged, so we compute the offsets using the starting position (this_.dragStartXY)
-          outline.attr('transform', "translate(" + (-(input.connection.x_ - this_.dragStartXY_.x) + sourceDx) + "," + -(input.connection.y_ - this_.dragStartXY_.y) + ")"); // position outline
+          // connections aren't moved when block is dragged, so we compute the offsets using the starting position (this.dragStartXY)
+          outline.attr('transform', "translate(" + (-(input.connection.x_ - this.dragStartXY_.x) + sourceDx) + "," + -(input.connection.y_ - this.dragStartXY_.y) + ")"); // position outline
           // no need to shift existing blocks
           $(source.getSvgRoot()).append(outline); // add outline to svg
           // no search for containing blocks needed
@@ -952,7 +951,7 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
         }
         // previous connection
         if (Blockly.highlightedConnection_ === source.previousConnection && !expanding) {
-          outline.attr('transform', "translate(0," + (-this_.getHeightWidth().height) + ")"); // position outline
+          outline.attr('transform', "translate(0," + (-this.getHeightWidth().height) + ")"); // position outline
           // no need to shift existing blocks
           $(source.getSvgRoot()).append(outline); // add outline to svg
           // no search for containing blocks needed
@@ -961,8 +960,8 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
         if (source.inputList && sourceInput && Blockly.highlightedConnection_ === sourceInput.connection) {
           var xy = source.getRelativeToSurfaceXY();
           // adjustment so the connection of dragged block lines up with highlighted connection
-          // connections aren't moved when block is dragged, so we compute the offsets using the starting position (this_.dragStartXY)
-          var thisDx = this_.previousConnection.x_ - this_.dragStartXY_.x; // offset of dragged block's previous connection
+          // connections aren't moved when block is dragged, so we compute the offsets using the starting position (this.dragStartXY)
+          var thisDx = this.previousConnection.x_ - this.dragStartXY_.x; // offset of dragged block's previous connection
           outline.attr('transform', "translate(" + ((sourceInput.connection.x_ - xy.x) - thisDx) + "," + (sourceInput.connection.y_ - xy.y) + ")"); // position outline
           // no need to shift existing blocks
           $(source.getSvgRoot()).append(outline); // add outline to svg
@@ -980,7 +979,7 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
           current = current.getSurroundParent();
         }
         blocksToExpand.forEach(function (b) {
-          b.resizeContainer(this_.getHeightWidth().height);
+          b.resizeContainer(this.getHeightWidth().height);
         });
       }
     }

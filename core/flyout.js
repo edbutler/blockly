@@ -548,7 +548,7 @@ Blockly.Flyout.prototype.show_all = function () {
     this.cutoff_width_ = 1000; // truncate nothing
     this.reflow(true);
     this.targetWorkspace_.recordDeleteAreas();
-    Blockly.fireUiEvent(this.svgGroup_, "toolboxUpdated");
+    Blockly.fireUiEvent(window, "toolboxUpdated");
   }
 };
 
@@ -556,7 +556,7 @@ Blockly.Flyout.prototype.show_cutoff = function () {
   this.cutoff_width_ = this.CUTOFF_WIDTH; // truncate normally
   this.reflow();
   this.targetWorkspace_.recordDeleteAreas();
-  Blockly.fireUiEvent(this.svgGroup_, "toolboxUpdated");
+  Blockly.fireUiEvent(window, "toolboxUpdated");
   setTimeout(function (this_) {
     this_.fullWidth_ = this_.width_;
     this_.position();
@@ -689,10 +689,8 @@ Blockly.Flyout.prototype.createBlockFunc_ = function(originBlock) {
     }
 
     // Create the new block by cloning the block in the flyout (via XML).
-    var xml = Blockly.Xml.blockToDom_(originBlock);
+    var xml = Blockly.Xml.blockToDom(originBlock);
     var block = Blockly.Xml.domToBlock(workspace, xml);
-
-    block.id = Blockly.Blocks.genUid();
 
     var xyOld = Blockly.getSvgXY_(svgRootOld, workspace);
     // Scale the scroll (getSvgXY_ did not do this).

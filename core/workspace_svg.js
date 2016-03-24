@@ -364,31 +364,6 @@ Blockly.WorkspaceSvg.prototype.translate = function(x, y) {
 };
 
 /**
-<<<<<<< HEAD
- * Add a block to the list of top blocks.
- * @param {!Blockly.Block} block Block to remove.
- */
-Blockly.WorkspaceSvg.prototype.addTopBlock = function(block) {
-  Blockly.WorkspaceSvg.superClass_.addTopBlock.call(this, block);
-  if (Blockly.Realtime.isEnabled() && !this.options.parentWorkspace) {
-    Blockly.Realtime.addTopBlock(block);
-  }
-};
-
-/**
- * Remove a block from the list of top blocks.
- * @param {!Blockly.Block} block Block to remove.
- */
-Blockly.WorkspaceSvg.prototype.removeTopBlock = function(block, isDelete) {
-  Blockly.WorkspaceSvg.superClass_.removeTopBlock.call(this, block, isDelete);
-  if (Blockly.Realtime.isEnabled() && !this.options.parentWorkspace) {
-    Blockly.Realtime.removeTopBlock(block);
-  }
-};
-
-/**
-=======
->>>>>>> ed76e1b067414ece99912e41e2e99a3148662a1c
  * Returns the horizontal offset of the workspace.
  * Intended for LTR/RTL compatibility in XML.
  * @return {number} Width.
@@ -482,26 +457,6 @@ Blockly.WorkspaceSvg.prototype.highlightBlock = function(id) {
 };
 
 /**
-<<<<<<< HEAD
- * Fire a change event for this workspace.  Changes include new block, dropdown
- * edits, mutations, connections, etc.  Groups of simultaneous changes (e.g.
- * a tree of blocks being deleted) are merged into one event.
- * Applications may hook workspace changes by listening for
- * 'blocklyWorkspaceChange' on workspace.getCanvas().
- */
-Blockly.WorkspaceSvg.prototype.fireChangeEvent = function(subtype) {
-  var canvas = this.svgBlockCanvas_;
-  if (this.rendered && canvas) {
-    Blockly.fireUiEvent(canvas, 'blocklyWorkspaceChange');
-    if (subtype === 'delete') {
-      Blockly.fireUiEvent(canvas, 'blocklyBlockDeleted');
-    }
-  }
-};
-
-/**
-=======
->>>>>>> ed76e1b067414ece99912e41e2e99a3148662a1c
  * Paste the provided block onto the workspace.
  * @param {!Element} xmlBlock XML block element.
  */

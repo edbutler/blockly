@@ -603,37 +603,6 @@ Blockly.setMainWorkspaceMetrics_ = function(xyRatio) {
 };
 
 /**
-<<<<<<< HEAD
- * Execute a command.  Generally, a command is the result of a user action
- * e.g., a click, drag or context menu selection.  Calling the cmdThunk function
- * through doCommand() allows us to capture information that can be used for
- * capabilities like undo (which is supported by the realtime collaboration
- * feature).
- * @param {function()} cmdThunk A function representing the command execution.
- */
-Blockly.doCommand = function(cmdThunk) {
-  if (Blockly.Realtime.isEnabled) {
-    Blockly.Realtime.doCommand(cmdThunk);
-  } else {
-    cmdThunk();
-  }
-};
-
-/**
- * Generic version of addChangeListener, but for any event on the canvas.
- * @param {!String} event The event type.
- * @param {!Function} func Function to call.
- * @return {!Array.<!Array>} Opaque data that can be passed to
- *     removeChangeListener.
- */
-Blockly.addCanvasListener = function(type, func) {
-  var canvas = Blockly.mainWorkspace.getCanvas();
-  return Blockly.bindEvent_(canvas, type, null, func);
-};
-
-/**
-=======
->>>>>>> ed76e1b067414ece99912e41e2e99a3148662a1c
  * When something in Blockly's workspace changes, call a function.
  * @param {!Function} func Function to call.
  * @return {!Array.<!Array>} Opaque data that can be passed to
