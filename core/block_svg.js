@@ -980,7 +980,7 @@ Blockly.BlockSvg.prototype.onMouseMove_ = function(e) {
         }
         blocksToExpand.forEach(function (b) {
           b.resizeContainer(this.getHeightWidth().height);
-        });
+        }, this);
       }
     }
 
@@ -1533,10 +1533,12 @@ Blockly.BlockSvg.prototype.updateColour = function() {
     rgb = goog.color.darken(rgb, 0.4);
   }
   if (this.isShadow()) {
-    rgb = goog.color.lighten(rgb, 0.6);
-    hexColour = goog.color.rgbArrayToHex(rgb);
+    rgb = this.getParent() != null ? goog.color.hexToRgb(this.getParent().getColour()) : rgb;
+    var hexDark = goog.color.rgbArrayToHex(goog.color.darken(rgb, 0.5));
+    hexColour = goog.color.rgbArrayToHex(goog.color.lighten(rgb, 0.5));
     this.svgPathLight_.style.display = 'none';
-    this.svgPathDark_.setAttribute('fill', hexColour);
+    this.svgPathDark_.setAttribute('fill', hexDark);
+    this.svgPath_.setAttribute('fill', hexColour);
   } else {
     var rgbLight = goog.color.lighten(rgb, 0.3);
     var rgbDark = goog.color.darken(rgb, 0.2);

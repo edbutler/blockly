@@ -627,28 +627,6 @@ Blockly.Block.prototype.setTooltip = function(newTip) {
 
 /**
  * Get the colour of a block.
- * @return {string} #RRGGBB string.
- */
-Blockly.Block.prototype.getFullColor = function() {
-  return this.colorFull_;
-};
-
-/**
- * Change the colour of a block.
- * @param {number} colourHue HSV hue value.
- */
-Blockly.Block.prototype.setFullColor = function(color) {
-  this.colorFull_ = color;
-  var icons = this.getIcons();
-  for (var x = 0; x < icons.length; x++) {
-    icons[x].updateColour();
-  }
-  this.updateColour();
-};
-
-
-/**
- * Get the colour of a block.
  * @return {number} HSV hue value.
  */
 Blockly.Block.prototype.getColour = function() {
