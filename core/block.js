@@ -173,6 +173,7 @@ Blockly.Block.prototype.dispose = function(healStack, animate,
   if (this.onchangeWrapper_) {
     this.workspace.removeChangeListener(this.onchangeWrapper_)
   }
+  var canvas = this.workspace.getCanvas();
   this.unplug(healStack);
   if (Blockly.Events.isEnabled() && !this.isShadow()) {
     Blockly.Events.fire(new Blockly.Events.Delete(this));
@@ -219,6 +220,8 @@ Blockly.Block.prototype.dispose = function(healStack, animate,
     }
     connections[i].dispose();
   }
+  // fire event in order to trigger toolbox update
+  Blockly.fireUiEventNow(canvas, 'blocklyBlockDeleted');
   // Remove from block database.
   delete Blockly.Block.BlockDB_[this.id];
   Blockly.Events.enable();
