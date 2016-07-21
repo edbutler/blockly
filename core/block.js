@@ -220,8 +220,6 @@ Blockly.Block.prototype.dispose = function(healStack, animate,
     }
     connections[i].dispose();
   }
-  // fire event in order to trigger toolbox update
-  Blockly.fireUiEventNow(canvas, 'blocklyBlockDeleted');
   // Remove from block database.
   delete Blockly.Block.BlockDB_[this.id];
   Blockly.Events.enable();
