@@ -128,7 +128,7 @@ Blockly.Flyout.prototype.width_ = 0;
  */
 Blockly.Flyout.prototype.height_ = 0;
 
-Blockly.Flyout.prototype.CUTOFF_WIDTH = 150;
+Blockly.Flyout.prototype.CUTOFF_WIDTH = 175;
 
 Blockly.Flyout.prototype.cutoff_width_ = Blockly.Flyout.prototype.CUTOFF_WIDTH;
 

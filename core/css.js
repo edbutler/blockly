@@ -307,7 +307,7 @@ Blockly.Css.CONTENT = [
   '}',
 
   '.blocklyMainBackground {',
-    'stroke-width: 1;',
+    'stroke-width: 0;',
     'stroke: #c6c6c6;',  /* Equates to #ddd due to border being off-pixel. */
   '}',
 
@@ -320,6 +320,7 @@ Blockly.Css.CONTENT = [
   '.blocklyFlyoutBackground {',
     'fill: #ddd;',
     'fill-opacity: .8;',
+    'width': 162px;
   '}',
 
   '.blocklyScrollbarBackground {',
