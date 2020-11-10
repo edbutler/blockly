@@ -215,9 +215,10 @@ Blockly.Css.CONTENT = [
 
   '.blocklyText {',
     'cursor: default;',
-    'fill: #fff;',
-    'font-family: sans-serif;',
+    'fill: #1F6F8B;',
+    'font-family: Roboto Slab;',
     'font-size: 11pt;',
+    'font-weight: 600;',
   '}',
 
   '.blocklyNonEditableText>text {',
@@ -226,7 +227,7 @@ Blockly.Css.CONTENT = [
 
   '.blocklyNonEditableText>rect,',
   '.blocklyEditableText>rect {',
-    'fill: #fff;',
+    'fill: #1F6F8B;',
     'fill-opacity: .6;',
   '}',
 
@@ -320,7 +321,7 @@ Blockly.Css.CONTENT = [
   '.blocklyFlyoutBackground {',
     'fill: #ddd;',
     'fill-opacity: .8;',
-    'width': 162px;
+    'width: 162px;',
   '}',
 
   '.blocklyScrollbarBackground {',
