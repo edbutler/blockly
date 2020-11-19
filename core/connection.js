@@ -657,6 +657,13 @@ Blockly.Connection.prototype.checkType_ = function(otherConnection) {
     //console.log("sourceOnly");
     return false;
   }
+  // Don't allow a variable to be set to itself
+  if (this.sourceBlock_.getVars && otherConnection.sourceBlock_.getVars &&
+      (this.type === Blockly.INPUT_VALUE || otherConnection.type === Blockly.INPUT_VALUE) &&
+      this.sourceBlock_.getVars()[0] === otherConnection.sourceBlock_.getVars()[0]) {
+    // console.log("varible set to itself: " + this.type + " " + otherConnection.type);
+    return false;
+  }
   // Don't split a connection where both sides are immovable.
   var thisTargetBlock = this.targetBlock();
   if (thisTargetBlock && !thisTargetBlock.isMovable() &&
