@@ -527,13 +527,13 @@ Blockly.WorkspaceSvg.prototype.recordDeleteAreas = function() {
   } else {
     this.deleteAreaTrash_ = null;
   }
-  if (this.flyout_) {
-    this.deleteAreaToolbox_ = this.flyout_.getClientRect();
-  } else if (this.toolbox_) {
-    this.deleteAreaToolbox_ = this.toolbox_.getClientRect();
-  } else {
-    this.deleteAreaToolbox_ = null;
-  }
+  // if (this.flyout_) {
+  //   this.deleteAreaToolbox_ = this.flyout_.getClientRect();
+  // } else if (this.toolbox_) {
+  //   this.deleteAreaToolbox_ = this.toolbox_.getClientRect();
+  // } else {
+  //   this.deleteAreaToolbox_ = null;
+  // }
 };
 
 /**
@@ -553,12 +553,13 @@ Blockly.WorkspaceSvg.prototype.isDeleteArea = function(e) {
     }
     this.trashcan.setOpen_(false);
   }
-  if (this.deleteAreaToolbox_) {
-    if (this.deleteAreaToolbox_.contains(xy)) {
-      Blockly.Css.setCursor(Blockly.Css.Cursor.DELETE);
-      return true;
-    }
-  }
+  // // Fix scale of mouse event.
+  // if (this.deleteAreaToolbox_) {
+  //   if (this.deleteAreaToolbox_.contains(xy)) {
+  //     Blockly.Css.setCursor(Blockly.Css.Cursor.DELETE);
+  //     return true;
+  //   }
+  // }
   Blockly.Css.setCursor(Blockly.Css.Cursor.CLOSED);
   return false;
 };

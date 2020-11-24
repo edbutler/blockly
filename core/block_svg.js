@@ -529,11 +529,19 @@ Blockly.BlockSvg.prototype.onMouseDown_ = function(e) {
  */
 Blockly.BlockSvg.prototype.onMouseUp_ = function(e) {
   Blockly.terminateDrag_();
+  if (e.clientX < 218) {
+    // var children = Blockly.selected.getChildren();
+    // for (var i = 0, child; child = children[i]; i++) {
+    //   Blockly.selected.shiftBy(212-e.clientX, 0);
+    // }
+    // console.log("!!!!!!!!!!!????", Blockly.selected.getChlildren);
+    Blockly.selected.shiftBy(215-e.clientX, 0);
+    // Blockly.selected.children.shiftBy(215-e.clientX, 0);
+  }
   if (Blockly.selected && Blockly.highlightedConnection_) {
     // get the block the highlighted connection is currently connected to
     // Blockly highlights the next connections, so this gives us the block we need to displace
     var target = Blockly.highlightedConnection_.targetBlock();
-
     // clean up any displacement
     if (target && target.previousConnection) {
       target.shiftBy(0, -this.getHeightWidth().height);
