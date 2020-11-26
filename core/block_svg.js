@@ -529,6 +529,13 @@ Blockly.BlockSvg.prototype.onMouseDown_ = function(e) {
  */
 Blockly.BlockSvg.prototype.onMouseUp_ = function(e) {
   Blockly.terminateDrag_();
+  if (this.workspace.flyout_) {
+    var xy = Blockly.getSvgXY_(/** @type {!Element} */ (this.svgGroup_),
+        this.workspace);
+    if (xy.x < this.workspace.flyout_.svgGroup_.getBoundingClientRect().width) {
+      this.moveBy(this.workspace.flyout_.svgGroup_.getBoundingClientRect().width - xy.x, 0);
+    }
+  }
   if (Blockly.selected && Blockly.highlightedConnection_) {
     // get the block the highlighted connection is currently connected to
     // Blockly highlights the next connections, so this gives us the block we need to displace

@@ -527,13 +527,13 @@ Blockly.WorkspaceSvg.prototype.recordDeleteAreas = function() {
   } else {
     this.deleteAreaTrash_ = null;
   }
-  if (this.flyout_) {
-    this.deleteAreaToolbox_ = this.flyout_.getClientRect();
-  } else if (this.toolbox_) {
-    this.deleteAreaToolbox_ = this.toolbox_.getClientRect();
-  } else {
+  // if (this.flyout_) {
+  //   this.deleteAreaToolbox_ = this.flyout_.getClientRect();
+  // } else if (this.toolbox_) {
+  //   this.deleteAreaToolbox_ = this.toolbox_.getClientRect();
+  // } else {
     this.deleteAreaToolbox_ = null;
-  }
+  // }
 };
 
 /**
