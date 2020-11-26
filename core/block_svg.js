@@ -540,7 +540,6 @@ Blockly.BlockSvg.prototype.onMouseUp_ = function(e) {
     // get the block the highlighted connection is currently connected to
     // Blockly highlights the next connections, so this gives us the block we need to displace
     var target = Blockly.highlightedConnection_.targetBlock();
-
     // clean up any displacement
     if (target && target.previousConnection) {
       target.shiftBy(0, -this.getHeightWidth().height);

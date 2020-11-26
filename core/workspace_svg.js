@@ -553,12 +553,13 @@ Blockly.WorkspaceSvg.prototype.isDeleteArea = function(e) {
     }
     this.trashcan.setOpen_(false);
   }
-  if (this.deleteAreaToolbox_) {
-    if (this.deleteAreaToolbox_.contains(xy)) {
-      Blockly.Css.setCursor(Blockly.Css.Cursor.DELETE);
-      return true;
-    }
-  }
+  // // Fix scale of mouse event.
+  // if (this.deleteAreaToolbox_) {
+  //   if (this.deleteAreaToolbox_.contains(xy)) {
+  //     Blockly.Css.setCursor(Blockly.Css.Cursor.DELETE);
+  //     return true;
+  //   }
+  // }
   Blockly.Css.setCursor(Blockly.Css.Cursor.CLOSED);
   return false;
 };
