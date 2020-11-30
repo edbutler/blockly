@@ -46,35 +46,35 @@ Blockly.Trashcan = function(workspace) {
  * @type {number}
  * @private
  */
-Blockly.Trashcan.prototype.WIDTH_ = 47;
+Blockly.Trashcan.prototype.WIDTH_ = 94;
 
 /**
  * Height of the trashcan image (minus lid).
  * @type {number}
  * @private
  */
-Blockly.Trashcan.prototype.BODY_HEIGHT_ = 44;
+Blockly.Trashcan.prototype.BODY_HEIGHT_ = 88;
 
 /**
  * Height of the lid image.
  * @type {number}
  * @private
  */
-Blockly.Trashcan.prototype.LID_HEIGHT_ = 16;
+Blockly.Trashcan.prototype.LID_HEIGHT_ = 32;
 
 /**
  * Distance between trashcan and bottom edge of workspace.
  * @type {number}
  * @private
  */
-Blockly.Trashcan.prototype.MARGIN_BOTTOM_ = 20;
+Blockly.Trashcan.prototype.MARGIN_BOTTOM_ = 200;
 
 /**
  * Distance between trashcan and right edge of workspace.
  * @type {number}
  * @private
  */
-Blockly.Trashcan.prototype.MARGIN_SIDE_ = 55;
+Blockly.Trashcan.prototype.MARGIN_SIDE_ = 200;
 
 /**
  * Extent of hotspot on all sides beyond the size of the image.
