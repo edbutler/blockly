@@ -60,7 +60,7 @@ Blockly.Trashcan.prototype.BODY_HEIGHT_ = 176;
  * @type {number}
  * @private
  */
-Blockly.Trashcan.prototype.LID_HEIGHT_ = 32;
+Blockly.Trashcan.prototype.LID_HEIGHT_ = 64;
 
 /**
  * Distance between trashcan and bottom edge of workspace.
