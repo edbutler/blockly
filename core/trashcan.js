@@ -156,14 +156,14 @@ Blockly.Trashcan.prototype.createDom = function() {
   var clip = Blockly.createSvgElement('clipPath',
       {'id': 'blocklyTrashBodyClipPath' + rnd},
       this.svgGroup_);
-  /*Blockly.createSvgElement('rect',
+  Blockly.createSvgElement('rect',
       {'width': this.WIDTH_, 'height': this.BODY_HEIGHT_,
        'y': this.LID_HEIGHT_},
-      clip);*/
-  Blockly.createSvgElement('rect',
+      clip);
+  /*Blockly.createSvgElement('rect',
       {'width':188, 'height':176,
         'y': this.LID_HEIGHT_},
-      clip);
+      clip);*/
   var body = Blockly.createSvgElement('image',
       {'width': Blockly.SPRITE.width, 'height': Blockly.SPRITE.height, 'y': -32,
        'clip-path': 'url(#blocklyTrashBodyClipPath' + rnd + ')'},
