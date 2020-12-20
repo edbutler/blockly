@@ -273,8 +273,8 @@ Blockly.Trashcan.prototype.animateLid_ = function() {
       (this.workspace_.RTL ? -lidAngle : lidAngle) + ',' +
       (this.workspace_.RTL ? 4 : this.WIDTH_ - 4) + ',' +
       (this.LID_HEIGHT_ - 2) + ')');
-  var opacity = goog.math.lerp(1, 1, this.lidOpen_);
-  this.svgGroup_.style.opacity = opacity;
+  //var opacity = goog.math.lerp(1, 1, this.lidOpen_);
+  //this.svgGroup_.style.opacity = opacity;
   if (this.lidOpen_ > 0 && this.lidOpen_ < 1) {
     this.lidTask_ = goog.Timer.callOnce(this.animateLid_, 20, this);
   }
