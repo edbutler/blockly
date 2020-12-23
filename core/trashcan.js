@@ -67,7 +67,7 @@ Blockly.Trashcan.prototype.LID_HEIGHT_ = 16;
  * @type {number}
  * @private
  */
-Blockly.Trashcan.prototype.MARGIN_BOTTOM_ = 0;
+Blockly.Trashcan.prototype.MARGIN_BOTTOM_ = -20;
 
 /**
  * Distance between trashcan and right edge of workspace.
