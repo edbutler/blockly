@@ -1536,7 +1536,13 @@ Blockly.BlockSvg.prototype.updateColour = function() {
 
   var rgb = goog.color.hexToRgb(hexColour);
   if (this.frozen) {
-    rgb = goog.color.darken(rgb, 0.4);
+    rgb = goog.color.darken(rgb, 0.3);
+    var children = this.getSvgRoot().children;
+    for (var i = 0; i < children.length; i++) {
+      if (children[i].nodeName === "text") {
+        Blockly.addClass_(children[i], "blocklyFrozenText");
+      }
+    }
   }
   if (this.isShadow()) {
     rgb = this.getParent() != null ? goog.color.hexToRgb(this.getParent().getColour()) : rgb;

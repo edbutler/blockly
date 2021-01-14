@@ -220,6 +220,13 @@ Blockly.Css.CONTENT = [
     'font-size: 11pt;',
     'font-weight: 600;',
   '}',
+  '.blocklyFrozenText {',
+    'cursor: default;',
+    'fill: #f8f8ff;',
+    'font-family: Roboto Slab;',
+    'font-size: 11pt;',
+    'font-weight: 600;',
+  '}',
 
   '.blocklyNonEditableText>text {',
     'pointer-events: none;',
