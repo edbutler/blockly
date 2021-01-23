@@ -1373,8 +1373,6 @@ Blockly.Block.prototype.freeze = function(options) {
   this.contextMenu = false;
   if (options.doFreezeArgs) {
     this.setEditable(false);
-  } else {
-    this.setEditable(true);
   }
 
   // check for inline input that needs to be frozen

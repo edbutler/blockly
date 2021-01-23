@@ -529,11 +529,17 @@ Blockly.BlockSvg.prototype.onMouseDown_ = function(e) {
  */
 Blockly.BlockSvg.prototype.onMouseUp_ = function(e) {
   Blockly.terminateDrag_();
+  if (this.workspace.flyout_) {
+    var xy = Blockly.getSvgXY_(/** @type {!Element} */ (this.svgGroup_),
+        this.workspace);
+    if (xy.x < this.workspace.flyout_.svgGroup_.getBoundingClientRect().width) {
+      this.moveBy(this.workspace.flyout_.svgGroup_.getBoundingClientRect().width - xy.x, 0);
+    }
+  }
   if (Blockly.selected && Blockly.highlightedConnection_) {
     // get the block the highlighted connection is currently connected to
     // Blockly highlights the next connections, so this gives us the block we need to displace
     var target = Blockly.highlightedConnection_.targetBlock();
-
     // clean up any displacement
     if (target && target.previousConnection) {
       target.shiftBy(0, -this.getHeightWidth().height);
@@ -1324,7 +1330,7 @@ Blockly.BlockSvg.prototype.dispose = function(healStack, animate,
  * Play some UI effects (sound, animation) when disposing of a block.
  */
 Blockly.BlockSvg.prototype.disposeUiEffect = function() {
-  this.workspace.playAudio('delete');
+  // this.workspace.playAudio('delete');
 
   var xy = Blockly.getSvgXY_(/** @type {!Element} */ (this.svgGroup_),
                              this.workspace);
@@ -1374,7 +1380,7 @@ Blockly.BlockSvg.disposeUiStep_ = function(clone, rtl, start, workspaceScale) {
  * Play some UI effects (sound, ripple) after a connection has been established.
  */
 Blockly.BlockSvg.prototype.connectionUiEffect = function() {
-  this.workspace.playAudio('click');
+  // this.workspace.playAudio('click');
   if (this.workspace.scale < 1) {
     return;  // Too small to care about visual effects.
   }
@@ -1423,7 +1429,7 @@ Blockly.BlockSvg.connectionUiStep_ = function(ripple, start, workspaceScale) {
  * Play some UI effects (sound, animation) when disconnecting a block.
  */
 Blockly.BlockSvg.prototype.disconnectUiEffect = function() {
-  this.workspace.playAudio('disconnect');
+  // this.workspace.playAudio('disconnect');
   if (this.workspace.scale < 1) {
     return;  // Too small to care about visual effects.
   }
@@ -1530,7 +1536,13 @@ Blockly.BlockSvg.prototype.updateColour = function() {
 
   var rgb = goog.color.hexToRgb(hexColour);
   if (this.frozen) {
-    rgb = goog.color.darken(rgb, 0.4);
+    rgb = goog.color.darken(rgb, 0.3);
+    var children = this.getSvgRoot().children;
+    for (var i = 0; i < children.length; i++) {
+      if (children[i].nodeName === "text") {
+        Blockly.addClass_(children[i], "blocklyFrozenText");
+      }
+    }
   }
   if (this.isShadow()) {
     rgb = this.getParent() != null ? goog.color.hexToRgb(this.getParent().getColour()) : rgb;

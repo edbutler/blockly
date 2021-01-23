@@ -56,7 +56,7 @@ Blockly.Variables.allVariables = function(root) {
   var variableHash = Object.create(null);
   // Iterate through every block and add each variable to the hash.
   for (var x = 0; x < blocks.length; x++) {
-    if (blocks[x].getVars) {
+    if (blocks[x].getVars && !blocks[x].frozen) {
       var blockVariables = blocks[x].getVars();
       for (var y = 0; y < blockVariables.length; y++) {
         var varName = blockVariables[y];
