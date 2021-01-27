@@ -515,7 +515,8 @@ Blockly.hideChaff = function(opt_allowToolbox) {
  * @this Blockly.WorkspaceSvg
  */
 Blockly.getMainWorkspaceMetrics_ = function() {
-  var svgSize = Blockly.svgSize(this.getParentSvg());
+  //var svgSize = Blockly.svgSize(this.getParentSvg());
+  var svgSize = this.getParentSvg().getBoundingClientRect();
   if (this.toolbox_) {
     svgSize.width -= this.toolbox_.width;
   }

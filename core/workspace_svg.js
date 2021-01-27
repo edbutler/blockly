@@ -158,11 +158,11 @@ Blockly.WorkspaceSvg.prototype.createDom = function(opt_backgroundClass) {
   if (opt_backgroundClass) {
     /** @type {SVGElement} */
     this.svgBackground_ = Blockly.createSvgElement('rect',
-        {'height': '100%', 'width': '100%', 'class': opt_backgroundClass},
+        {'fill': '#1c2b2d', 'height': '100%', 'width': '100%', 'class': opt_backgroundClass},
         this.svgGroup_);
     if (opt_backgroundClass == 'blocklyMainBackground') {
-      this.svgBackground_.style.fill =
-          'url(#' + this.options.gridPattern.id + ')';
+      this.svgBackground_.style.fill = '#1c2b2d';
+          // 'url(#' + this.options.gridPattern.id + ')';
     }
   }
   /** @type {SVGElement} */
